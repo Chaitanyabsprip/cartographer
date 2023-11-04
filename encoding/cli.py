@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 
 import requests
-from semantic_search_engine import make_search_request
+from embeding import make_search_request
 from server import app
 
 
-def check_server_running():
+def is_server_running():
     try:
         response = requests.get("http://127.0.0.1:5000/")
         return response.ok
@@ -43,11 +43,10 @@ def main():
     if args.daemon:
         return app.run()
     if args.query:
-        if check_server_running():
-            print(make_search_request(args.query, 20))
-        else:
+        if not is_server_running():
             print("Server is not running. Starting the server...")
             app.run()
+        print(make_search_request(args.query, 20))
     else:
         parser.print_help()
 

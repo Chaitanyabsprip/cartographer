@@ -18,7 +18,7 @@ model = SentenceTransformer("msmarco-distilbert-base-v4")
 class Config:
     directory: str
     embeddings_file: str
-    embeddings: dict | None
+    embeddings: dict
 
 
 notespath = environ["NOTESPATH"]  # this is unsafe, use a config file instead

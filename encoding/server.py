@@ -1,7 +1,7 @@
 from os import getpid
 
+from embeding import config, index_files, make_search_request
 from flask import Flask, jsonify, request
-from semantic_search_engine import config, index_files, make_search_request
 
 app = Flask(__name__)
 
@@ -28,7 +28,6 @@ def info():
 @app.route("/index", methods=["GET"])
 def index():
     filepath = request.args.get("filepath")
-    print(filepath)
     directory = config.directory
     embeddings_file = config.embeddings_file
     index_files(filepath or directory, embeddings_file)
