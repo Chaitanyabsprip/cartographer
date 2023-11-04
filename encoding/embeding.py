@@ -1,20 +1,16 @@
-from argparse import ArgumentParser
 from dataclasses import dataclass
 from json import dump
 from json import load as jLoad
-from os import environ, getpid, path, walk
+from os import environ, path, walk
 from re import sub
 from string import punctuation
 
-import requests
 import torch
 from bs4 import BeautifulSoup
-from flask import Flask, jsonify, request
 from markdown import markdown
 from numpy import array
 from sentence_transformers import SentenceTransformer, util
 
-app = Flask(__name__)
 model = SentenceTransformer("msmarco-distilbert-base-v4")
 
 
@@ -142,96 +138,8 @@ def format_search_results(results):
     return formatted_results
 
 
-@app.route("/")
-def hello():
-    help_data = """
-    Welcome to the Semantic Search Server!
-
-    Available endpoints:
-    - /search?query=<your_query> - Perform a semantic search with the specified query.
-    - /index - Index the markdown files and generate embeddings.
-
-    For more details, please refer to the API documentation.
-    """
-    return help_data
-
-
-@app.route("/info", methods=["GET"])
-def info():
-    return jsonify({"pid": getpid()})
-
-
-@app.route("/index", methods=["GET"])
-def index():
-    filepath = request.args.get("filepath")
-    print(filepath)
-    directory = config.directory
-    embeddings_file = config.embeddings_file
-    index_files(filepath or directory, embeddings_file)
-    return "Indexing Completed"
-
-
-@app.route("/search", methods=["GET"])
-def perform_search():
-    query = request.args.get("query")
-    limit = request.args.get("limit")
-    results = make_search_request(query, limit)
-    return jsonify(results)
-
-
-def check_server_running():
-    try:
-        response = requests.get("http://127.0.0.1:5000/")
-        return response.ok
-    except requests.exceptions.ConnectionError:
-        return False
-
-
 def make_search_request(query, limit):
     embeddings_file = config.embeddings_file
     results = search(query, embeddings_file, top_k=limit)
     formatted_results = format_search_results(results)
     return formatted_results
-
-
-def parse_args(parser: ArgumentParser):
-    parser.add_argument(
-        "-d",
-        "--directory",
-        help="Directory path of markdown files",
-    )
-    parser.add_argument(
-        "-e",
-        "--embeddings",
-        help="Embeddings file path",
-    )
-    parser.add_argument(
-        "--daemon",
-        action="store_true",
-        help="Run the server as a daemon",
-    )
-    parser.add_argument(
-        "-q",
-        "--query",
-        help="Query string for semantic search",
-    )
-    return parser.parse_args()
-
-
-def main():
-    parser = ArgumentParser(description="Semantic Search Program")
-    args = parse_args(parser)
-    if args.daemon:
-        return app.run()
-    if args.query:
-        if check_server_running():
-            print(make_search_request(args.query, 20))
-        else:
-            print("Server is not running. Starting the server...")
-            app.run()
-    else:
-        parser.print_help()
-
-
-if __name__ == "__main__":
-    main()
