@@ -1,6 +1,7 @@
+import time
 from os import getpid
 
-from embedding import config, index_files, make_search_request
+from embedding import emb, make_search_request
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -27,11 +28,11 @@ def info():
 
 @app.route("/index", methods=["GET"])
 def index():
+    start = time.time()
     filepath = request.args.get("filepath")
-    directory = config.directory
-    embeddings_file = config.embeddings_file
-    index_files(filepath or directory, embeddings_file)
-    return "Indexing Completed"
+    emb.index_files()
+    print((time.time() - start) * 10**3)
+    return "Indexing Completed\n"
 
 
 @app.route("/search", methods=["GET"])

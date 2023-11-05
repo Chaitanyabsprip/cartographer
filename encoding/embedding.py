@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from json import dump
 from json import load as jLoad
@@ -11,8 +12,6 @@ from markdown import markdown
 from numpy import array
 from sentence_transformers import SentenceTransformer, util
 
-model = SentenceTransformer("msmarco-distilbert-base-v4")
-
 
 @dataclass
 class Config:
@@ -22,11 +21,6 @@ class Config:
 
 
 notespath = environ["NOTESPATH"]  # this is unsafe, use a config file instead
-config = Config(
-    directory=notespath,
-    embeddings_file=f"{notespath}/.embeddings",
-    embeddings={},
-)
 
 
 class TextProcessor:
@@ -63,59 +57,80 @@ class TextProcessor:
         return self.text.strip()
 
 
-def embed_text(text: str) -> list[float]:
-    return model.encode([text])[0].tolist()
+class Embedder:
+    def __init__(self, directory, embedding_file):
+        self.model = SentenceTransformer("msmarco-distilbert-base-v4")
+        self.tp = TextProcessor()
+        self.directory = directory
+        self.embedding_file = embedding_file
+        self.embeddings = {}
 
+    def embed_text(self, text: str) -> list[float]:
+        return self.model.encode([text])[0].tolist()
 
-def embed_file(file_path: str):
-    tp = TextProcessor()
-    with open(file_path, "r", encoding="utf-8") as file:
-        markdown_content = file.read()
-        html_content = markdown(markdown_content)
-        cleaned_text = tp.clean(html_content)
-        embedding = embed_text(cleaned_text)
-        return embedding
+    def embed_file(self, file_path: str):
+        with open(file_path, "r", encoding="utf-8") as file:
+            markdown_content = file.read()
+            html_content = markdown(markdown_content)
+            cleaned_text = self.tp.clean(html_content)
+            embedding = self.embed_text(cleaned_text)
+            return embedding
 
+    def write_embeddings(
+        self, embeddings: dict[str, list[float]], file_path: str
+    ) -> None:
+        with open(f"{file_path}_bin", "wb") as file:
+            pickle.dump(embeddings, file)
+            # file.write(pickle.dumps(embeddings))
+        # with open(file_path, "w", encoding="utf-8") as file:
+        #     dump(embeddings, file, indent=4)
 
-def write_embeddings(
-    embeddings: dict[str, list[float]], file_path: str
-) -> None:
-    with open(file_path, "w", encoding="utf-8") as file:
-        dump(embeddings, file, indent=4)
-
-
-def process_files(directory: str):
-    embeddings: dict[str, list[float]] = {}
-    for root, _, files in walk(directory):
-        for filename in files:
-            if filename.endswith(".md"):
+    def process_files(self, directory: str):
+        embeddings: dict[str, list[float]] = {}
+        for root, dirs, files in walk(directory):
+            try:
+                dirs.remove(".git")
+                dirs.remove(".obsidian")
+            except:
+                pass
+            for filename in files:
+                if not filename.endswith(".md"):
+                    continue
                 file_path = path.abspath(path.join(root, filename))
-                embedding = embed_file(file_path)
+                embedding = self.embed_file(file_path)
                 embeddings[file_path] = embedding
-    return embeddings
+        return embeddings
+
+    def index_files(self, fpath: str = "") -> None:
+        embeddings = self.embeddings or {}
+        if path.isfile(fpath):
+            print("here")
+            abs_file_path = path.abspath(fpath)
+            embedding = self.embed_file(abs_file_path)
+            embeddings[abs_file_path] = embedding
+        elif path.isdir(fpath or self.directory):
+            new_embeddings = self.process_files(fpath or self.directory)
+            embeddings.update(new_embeddings)
+        else:
+            return print("Invalid file or directory path.")
+        self.write_embeddings(embeddings, self.embedding_file)
 
 
-def index_files(fpath: str, embeddings_file: str) -> None:
-    embeddings = config.embeddings or {}
-    if path.isfile(fpath):
-        abs_file_path = path.abspath(fpath)
-        embedding = embed_file(abs_file_path)
-        embeddings[abs_file_path] = embedding
-    elif path.isdir(fpath):
-        new_embeddings = process_files(fpath)
-        embeddings.update(new_embeddings)
-    else:
-        return print("Invalid file or directory path.")
-    write_embeddings(embeddings, embeddings_file)
+emb = Embedder(
+    directory=notespath,
+    embedding_file=f"{notespath}/.embeddings",
+)
 
 
 def search(query, embeddings_file, top_k=None):
-    if not config.embeddings:
-        with open(embeddings_file, "r", encoding="utf-8") as file:
-            config.embeddings = jLoad(file)
-    query_embedding = torch.from_numpy(model.encode([query])[0]).float()
+    if not emb.embeddings:
+        with open(embeddings_file, "rb") as file:
+            emb.embeddings = pickle.load(file)
+        # with open(embeddings_file, "r", encoding="utf-8") as file:
+        #     emb.embeddings = jLoad(file)
+    query_embedding = torch.from_numpy(emb.model.encode([query])[0]).float()
     scores = {}
-    for filename, embedding in config.embeddings.items():
+    for filename, embedding in emb.embeddings.items():
         score = util.pytorch_cos_sim(
             query_embedding, torch.from_numpy(array(embedding)).float()
         )
@@ -145,7 +160,7 @@ def format_search_results(results):
 
 
 def make_search_request(query, limit):
-    embeddings_file = config.embeddings_file
+    embeddings_file = emb.embedding_file
     results = search(query, embeddings_file, top_k=limit)
     formatted_results = format_search_results(results)
     return formatted_results
