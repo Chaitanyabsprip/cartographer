@@ -29,7 +29,6 @@ def info():
 @app.route("/index", methods=["GET"])
 def index():
     start = time.time()
-    filepath = request.args.get("filepath")
     emb.index_files()
     print((time.time() - start) * 10**3)
     return "Indexing Completed\n"

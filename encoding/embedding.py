@@ -1,17 +1,15 @@
 import os
 import pickle
-from dataclasses import dataclass
 from os.path import isdir
 from re import sub
 from string import punctuation
 
 import torch
 from bs4 import BeautifulSoup
+from config import Config
 from markdown import markdown
 from numpy import array
 from sentence_transformers import SentenceTransformer, util
-
-from config import Config
 
 config = Config()
 
@@ -35,7 +33,9 @@ class TextProcessor:
         return self.text
 
     def remove_punctuation(self, text: str = "") -> str:
-        cleaned_text = (text or self.text).translate(str.maketrans("", "", punctuation))
+        cleaned_text = (text or self.text).translate(
+            str.maketrans("", "", punctuation)
+        )
         self.text = cleaned_text
         return self.text
 
@@ -68,7 +68,7 @@ class Embedder:
     def write_embeddings(
         self, embeddings: dict[str, list[float]], file_path: str
     ) -> None:
-        with open(f"{file_path}_bin", "wb") as file:
+        with open(file_path, "wb") as file:
             pickle.dump(embeddings, file)
 
     def process_files(self, directory: str):
@@ -113,7 +113,10 @@ def search(query, embeddings_file, top_k=None):
         )
         scores[filename] = score.item()
     sorted_scores = {
-        k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        k: v
+        for k, v in sorted(
+            scores.items(), key=lambda item: item[1], reverse=True
+        )
     }
     results = list(sorted_scores.keys())
     if top_k:
@@ -134,7 +137,7 @@ def format_search_results(results):
 
 
 def make_search_request(query, limit):
-    embeddings_file = emb.embedding_file
+    embeddings_file = config.embedding_file
     results = search(query, embeddings_file, top_k=limit)
     formatted_results = format_search_results(results)
     return formatted_results
