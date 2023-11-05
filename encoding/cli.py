@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 
 import requests
-from embeding import make_search_request
+from embedding import make_search_request
 from server import app
 
 

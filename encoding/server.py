@@ -1,6 +1,6 @@
 from os import getpid
 
-from embeding import config, index_files, make_search_request
+from embedding import config, index_files, make_search_request
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
