@@ -1,0 +1,4 @@
+library
+.embeddings_bin
+config.yml
+*pycache*

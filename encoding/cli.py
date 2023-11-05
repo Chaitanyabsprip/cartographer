@@ -34,6 +34,11 @@ def parse_args(parser: ArgumentParser):
         "--query",
         help="Query string for semantic search",
     )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Use provided config file",
+    )
     return parser.parse_args()
 
 

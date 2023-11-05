@@ -11,15 +11,9 @@ from markdown import markdown
 from numpy import array
 from sentence_transformers import SentenceTransformer, util
 
+from config import Config
 
-@dataclass
-class Config:
-    directory: str
-    embeddings_file: str
-    embeddings: dict
-
-
-notespath = os.environ["NOTESPATH"]  # this is unsafe, use a config file instead
+config = Config()
 
 
 class TextProcessor:
@@ -41,9 +35,7 @@ class TextProcessor:
         return self.text
 
     def remove_punctuation(self, text: str = "") -> str:
-        cleaned_text = (text or self.text).translate(
-            str.maketrans("", "", punctuation)
-        )
+        cleaned_text = (text or self.text).translate(str.maketrans("", "", punctuation))
         self.text = cleaned_text
         return self.text
 
@@ -57,21 +49,9 @@ class TextProcessor:
 
 
 class Embedder:
-    def __init__(
-        self,
-        embedding_file,
-        extensions,
-        ignore_paths=[],
-        paths=[],
-        ignore_extensions=False,
-    ):
-        self.model = SentenceTransformer("msmarco-distilbert-base-v4")
+    def __init__(self):
+        self.model = SentenceTransformer(config.transformer_name)
         self.tp = TextProcessor()
-        self.embedding_file = embedding_file
-        self.ignore_paths = ignore_paths  # absolute
-        self.paths = paths  # absolute
-        self.extensions = extensions
-        self.ignore_extensions: bool = ignore_extensions
         self.embeddings = {}
 
     def embed_text(self, text: str) -> list[float]:
@@ -95,14 +75,14 @@ class Embedder:
         embeddings: dict[str, list[float]] = {}
         for root, dirs, files in os.walk(directory):
             try:
-                for pth in self.ignore_paths:
+                for pth in config.ignore_paths:
                     dirs.remove(pth)
             except:
                 pass
             for filename in files:
                 if not (
-                    (os.path.splitext(filename)[1] in self.extensions)
-                    ^ self.ignore_extensions
+                    (os.path.splitext(filename)[1] in config.extensions)
+                    ^ config.blacklist_extensions
                 ):
                     continue
                 file_path = os.path.abspath(os.path.join(root, filename))
@@ -111,20 +91,14 @@ class Embedder:
         return embeddings
 
     def index_files(self) -> None:
-        embeddings = self.embeddings or {}
-        for path in self.paths:
+        for path in config.paths:
             if isdir(path):
                 new_embeddings = self.process_files(path)
-                embeddings.update(new_embeddings)
-        self.write_embeddings(embeddings, self.embedding_file)
+                self.embeddings.update(new_embeddings)
+        self.write_embeddings(self.embeddings, config.embedding_file)
 
 
-emb = Embedder(
-    paths=[notespath],
-    ignore_paths=[".git", ".obsidian"],
-    embedding_file=f"{notespath}/.embeddings",
-    extensions=[".md"],
-)
+emb = Embedder()
 
 
 def search(query, embeddings_file, top_k=None):
@@ -139,10 +113,7 @@ def search(query, embeddings_file, top_k=None):
         )
         scores[filename] = score.item()
     sorted_scores = {
-        k: v
-        for k, v in sorted(
-            scores.items(), key=lambda item: item[1], reverse=True
-        )
+        k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)
     }
     results = list(sorted_scores.keys())
     if top_k:
