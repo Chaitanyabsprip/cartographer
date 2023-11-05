@@ -1,8 +1,7 @@
+import os
 import pickle
 from dataclasses import dataclass
-from json import dump
-from json import load as jLoad
-from os import environ, path, walk
+from os.path import isdir
 from re import sub
 from string import punctuation
 
@@ -20,7 +19,7 @@ class Config:
     embeddings: dict
 
 
-notespath = environ["NOTESPATH"]  # this is unsafe, use a config file instead
+notespath = os.environ["NOTESPATH"]  # this is unsafe, use a config file instead
 
 
 class TextProcessor:
@@ -58,11 +57,21 @@ class TextProcessor:
 
 
 class Embedder:
-    def __init__(self, directory, embedding_file):
+    def __init__(
+        self,
+        embedding_file,
+        extensions,
+        ignore_paths=[],
+        paths=[],
+        ignore_extensions=False,
+    ):
         self.model = SentenceTransformer("msmarco-distilbert-base-v4")
         self.tp = TextProcessor()
-        self.directory = directory
         self.embedding_file = embedding_file
+        self.ignore_paths = ignore_paths  # absolute
+        self.paths = paths  # absolute
+        self.extensions = extensions
+        self.ignore_extensions: bool = ignore_extensions
         self.embeddings = {}
 
     def embed_text(self, text: str) -> list[float]:
@@ -81,44 +90,40 @@ class Embedder:
     ) -> None:
         with open(f"{file_path}_bin", "wb") as file:
             pickle.dump(embeddings, file)
-            # file.write(pickle.dumps(embeddings))
-        # with open(file_path, "w", encoding="utf-8") as file:
-        #     dump(embeddings, file, indent=4)
 
     def process_files(self, directory: str):
         embeddings: dict[str, list[float]] = {}
-        for root, dirs, files in walk(directory):
+        for root, dirs, files in os.walk(directory):
             try:
-                dirs.remove(".git")
-                dirs.remove(".obsidian")
+                for pth in self.ignore_paths:
+                    dirs.remove(pth)
             except:
                 pass
             for filename in files:
-                if not filename.endswith(".md"):
+                if not (
+                    (os.path.splitext(filename)[1] in self.extensions)
+                    ^ self.ignore_extensions
+                ):
                     continue
-                file_path = path.abspath(path.join(root, filename))
+                file_path = os.path.abspath(os.path.join(root, filename))
                 embedding = self.embed_file(file_path)
                 embeddings[file_path] = embedding
         return embeddings
 
-    def index_files(self, fpath: str = "") -> None:
+    def index_files(self) -> None:
         embeddings = self.embeddings or {}
-        if path.isfile(fpath):
-            print("here")
-            abs_file_path = path.abspath(fpath)
-            embedding = self.embed_file(abs_file_path)
-            embeddings[abs_file_path] = embedding
-        elif path.isdir(fpath or self.directory):
-            new_embeddings = self.process_files(fpath or self.directory)
-            embeddings.update(new_embeddings)
-        else:
-            return print("Invalid file or directory path.")
+        for path in self.paths:
+            if isdir(path):
+                new_embeddings = self.process_files(path)
+                embeddings.update(new_embeddings)
         self.write_embeddings(embeddings, self.embedding_file)
 
 
 emb = Embedder(
-    directory=notespath,
+    paths=[notespath],
+    ignore_paths=[".git", ".obsidian"],
     embedding_file=f"{notespath}/.embeddings",
+    extensions=[".md"],
 )
 
 
@@ -126,8 +131,6 @@ def search(query, embeddings_file, top_k=None):
     if not emb.embeddings:
         with open(embeddings_file, "rb") as file:
             emb.embeddings = pickle.load(file)
-        # with open(embeddings_file, "r", encoding="utf-8") as file:
-        #     emb.embeddings = jLoad(file)
     query_embedding = torch.from_numpy(emb.model.encode([query])[0]).float()
     scores = {}
     for filename, embedding in emb.embeddings.items():
