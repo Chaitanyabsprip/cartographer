@@ -29,33 +29,38 @@ config = Config(
 )
 
 
-def remove_urls(text: str) -> str:
-    cleaned_text = sub(r"http\S+|www\S+", "", text)
-    cleaned_text = sub(r"\[(.*?)\]\((.*?)\)", "", cleaned_text)
-    return cleaned_text
+class TextProcessor:
+    def remove_urls(self, text: str = "") -> str:
+        cleaned_text = sub(r"http\S+|www\S+", "", text or self.text)
+        cleaned_text = sub(r"\[(.*?)\]\((.*?)\)", "", cleaned_text)
+        self.text = cleaned_text
+        return self.text
 
+    def remove_html_tags(self, text: str = "") -> str:
+        soup = BeautifulSoup(text or self.text, "html.parser")
+        cleaned_text = soup.get_text(separator=" ")
+        self.text = cleaned_text
+        return self.text
 
-def remove_html_tags(text: str) -> str:
-    soup = BeautifulSoup(text, "html.parser")
-    cleaned_text = soup.get_text(separator=" ")
-    return cleaned_text
+    def remove_decorations(self, text: str = "") -> str:
+        cleaned_text = sub(r"[*_~]", "", text or self.text)
+        self.text = cleaned_text
+        return self.text
 
+    def remove_punctuation(self, text: str = "") -> str:
+        cleaned_text = (text or self.text).translate(
+            str.maketrans("", "", punctuation)
+        )
+        self.text = cleaned_text
+        return self.text
 
-def remove_decorations(text: str) -> str:
-    cleaned_text = sub(r"[*_~]", "", text)
-    return cleaned_text
-
-
-def remove_punctuation(text: str) -> str:
-    cleaned_text = text.translate(str.maketrans("", "", punctuation))
-    return cleaned_text
-
-
-def clean_text(text: str) -> str:
-    cleaned_text = remove_punctuation(
-        remove_decorations(remove_html_tags(remove_urls(text)))
-    )
-    return cleaned_text.strip()
+    def clean(self, text: str = "") -> str:
+        self.text = text
+        self.remove_urls(text)
+        self.remove_html_tags()
+        self.remove_decorations()
+        self.remove_punctuation()
+        return self.text.strip()
 
 
 def embed_text(text: str) -> list[float]:
@@ -63,10 +68,11 @@ def embed_text(text: str) -> list[float]:
 
 
 def embed_file(file_path: str):
+    tp = TextProcessor()
     with open(file_path, "r", encoding="utf-8") as file:
         markdown_content = file.read()
         html_content = markdown(markdown_content)
-        cleaned_text = clean_text(html_content)
+        cleaned_text = tp.clean(html_content)
         embedding = embed_text(cleaned_text)
         return embedding
 
