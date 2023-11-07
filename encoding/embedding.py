@@ -33,9 +33,7 @@ class TextProcessor:
         return self.text
 
     def remove_punctuation(self, text: str = "") -> str:
-        cleaned_text = (text or self.text).translate(
-            str.maketrans("", "", punctuation)
-        )
+        cleaned_text = (text or self.text).translate(str.maketrans("", "", punctuation))
         self.text = cleaned_text
         return self.text
 
@@ -74,11 +72,11 @@ class Embedder:
     def process_files(self, directory: str):
         embeddings: dict[str, list[float]] = {}
         for root, dirs, files in os.walk(directory):
-            try:
-                for pth in config.ignore_paths:
+            for pth in config.ignore_paths:
+                try:
                     dirs.remove(pth)
-            except:
-                pass
+                except:
+                    pass
             for filename in files:
                 if not (
                     (os.path.splitext(filename)[1] in config.extensions)
@@ -113,10 +111,7 @@ def search(query, embeddings_file, top_k=None):
         )
         scores[filename] = score.item()
     sorted_scores = {
-        k: v
-        for k, v in sorted(
-            scores.items(), key=lambda item: item[1], reverse=True
-        )
+        k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)
     }
     results = list(sorted_scores.keys())
     if top_k:
