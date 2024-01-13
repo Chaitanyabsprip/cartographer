@@ -30,11 +30,11 @@ def embed_file(file_path: str):
 def get_files(directory: str) -> list[str]:
     filenames = []
     for root, dirs, files in os.walk(directory):
-        try:
-            for pth in config.ignore_paths:
+        for pth in config.ignore_paths:
+            try:
                 dirs.remove(pth)
-        except:
-            pass
+            except:
+                pass
         for filename in files:
             if not (
                 (os.path.splitext(filename)[1] in config.extensions)
