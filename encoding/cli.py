@@ -1,8 +1,9 @@
 from argparse import ArgumentParser
 
 import requests
-from embedding import make_search_request
-from server import app
+from app import make_search_request
+
+from daemon.server import app
 
 
 def is_server_running():
@@ -25,6 +26,7 @@ def parse_args(parser: ArgumentParser):
         help="Embeddings file path",
     )
     parser.add_argument(
+        "-D",
         "--daemon",
         action="store_true",
         help="Run the server as a daemon",
@@ -46,11 +48,11 @@ def main():
     parser = ArgumentParser(description="Semantic Search Program")
     args = parse_args(parser)
     if args.daemon:
-        return app.run()
+        return app.run(host="0.0.0.0", port=80)
     if args.query:
         if not is_server_running():
             print("Server is not running. Starting the server...")
-            app.run()
+            app.run(debug=True)
         print(make_search_request(args.query, 20))
     else:
         parser.print_help()

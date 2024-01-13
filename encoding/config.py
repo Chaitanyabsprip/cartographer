@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import yaml
 
@@ -60,6 +61,11 @@ def create_app_dirs():
         os.mkdir(config_dir)
 
 
+def create_embedding_file(path):
+    with open(path, "w") as _:
+        pass
+
+
 class Config:
     def __init__(self):
         create_app_dirs()
@@ -69,10 +75,10 @@ class Config:
             with open(config_filepath, "r") as file:
                 config = yaml.safe_load(file)
 
-        # TODO: This should be in cache path
         self.embedding_file = config.get(
             "embeddings_file", os.path.join(get_cache_dir(), ".embeddings_bin")
         )
+        create_embedding_file(self.embedding_file)
         self.transformer_name = config.get(
             "transformer_name", "msmarco-distilbert-base-v4"
         )
