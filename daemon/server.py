@@ -49,7 +49,8 @@ def info():
 @app.route("/index", methods=["GET"])
 def index():
     start = time.time()
-    index_files()
+    filepath = request.args.get("filepath")
+    index_files(filepath)
     print((time.time() - start) * 10**3)
     return "Indexing Completed\n"
 

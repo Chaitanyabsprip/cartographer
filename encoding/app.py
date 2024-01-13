@@ -55,10 +55,13 @@ def process_files(directory: str):
 
 
 def index_files(filepath: str = "") -> None:
-    for path in config.paths:
-        if isdir(path):
-            new_embeddings = process_files(path)
-            emb.embeddings.update(new_embeddings)
+    if filepath:
+        emb.embeddings[filepath] = embed_file(filepath)
+    else:
+        for path in config.paths:
+            if isdir(path):
+                new_embeddings = process_files(path)
+                emb.embeddings.update(new_embeddings)
     emb.write_embeddings(emb.embeddings, config.embedding_file)
 
 
