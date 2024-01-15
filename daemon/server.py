@@ -4,7 +4,7 @@ from os import getpid
 from flask import Flask, json, jsonify, request
 from werkzeug.exceptions import HTTPException
 
-from encoding.app import App
+from cartographer.app import App, format_search_results
 
 server = Flask(__name__)
 app = App()
@@ -52,7 +52,6 @@ def index():
     start = time.time()
     filepath = request.args.get("filepath")
     app.index(filepath)
-    print((time.time() - start) * 10**3)
     return "Indexing Completed\n"
 
 
@@ -60,7 +59,7 @@ def index():
 def perform_search():
     query = request.args.get("query", "", type=str)
     limit = request.args.get("limit", type=int)
-    results = app.search(query, limit)
+    results = format_search_results(app.search(query, limit))
     return jsonify(results)
 
 

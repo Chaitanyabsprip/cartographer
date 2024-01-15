@@ -1,3 +1,4 @@
+import logging as l
 from argparse import ArgumentParser
 
 import requests
@@ -5,12 +6,20 @@ from app import App, format_search_results
 
 from daemon.server import server
 
+l.basicConfig(
+    filename="/Users/chaitanyasharma/projects/cartographer/debug.log",
+    encoding="utf-8",
+    level=l.ERROR,
+)
+
 
 def is_server_running():
     try:
         response = requests.get("http://127.0.0.1:80/")
+        l.debug("server is running")
         return response.ok
     except requests.exceptions.ConnectionError:
+        l.debug("server is not running")
         return False
 
 

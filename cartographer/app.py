@@ -4,12 +4,11 @@ from os.path import isdir
 from typing import Optional
 
 import torch
-from embedding import config
 from numpy import array
 from sentence_transformers import util
-from text_processor import TextProcessor
 
-from encoding.embedding import FileEmbedder
+from encoding.embedding import FileEmbedder, config
+from encoding.text_processor import TextProcessor
 
 
 class App:
@@ -63,9 +62,8 @@ class App:
     def search(self, query: str, top_k: Optional[int]):
         encoded_query = torch.from_numpy(
             self.embedder.embed_text(query)
-            # self.embedder.model.encode([query])[0]
         ).float()
-        scores = {}
+        scores: dict[str, float] = {}
         for filename, embedding in self.embeddings.items():
             score = util.pytorch_cos_sim(
                 encoded_query, torch.from_numpy(array(embedding)).float()
@@ -98,10 +96,3 @@ def format_search_results(results):
         }
         formatted_results.append(result_dict)
     return formatted_results
-
-
-# def make_search_request(query, limit):
-#     embeddings_file = config.embedding_file
-#     results = search(query, embeddings_file, top_k=limit)
-#     formatted_results = format_search_results(results)
-#     return formatted_results

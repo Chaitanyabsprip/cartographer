@@ -1,9 +1,9 @@
 import pickle
 
-from config import Config
 from markdown import markdown
 from sentence_transformers import SentenceTransformer
 
+from cartographer.config import Config
 from encoding.text_processor import TextProcessor
 
 config = Config()
@@ -34,4 +34,4 @@ class FileEmbedder(Embedder):
 
     def embed_file(self, filepath: str):
         cleaned_text = self.__get_sanitized_text(filepath)
-        return self.embed_text(cleaned_text)
+        return self.embed_text(cleaned_text).tolist()
