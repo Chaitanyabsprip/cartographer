@@ -1,4 +1,5 @@
 import logging as l
+import sys
 from argparse import ArgumentParser
 
 import requests
@@ -7,15 +8,17 @@ from app import App, format_search_results
 from daemon.server import server
 
 l.basicConfig(
+    format="PY %(asctime)s %(levelname)s: %(message)s",
     filename="/Users/chaitanyasharma/projects/cartographer/debug.log",
     encoding="utf-8",
-    level=l.ERROR,
+    filemode="a",
+    level=l.DEBUG,
 )
 
 
 def is_server_running():
     try:
-        response = requests.get("http://127.0.0.1:80/")
+        response = requests.get("http://127.0.0.1:30000/")
         l.debug("server is running")
         return response.ok
     except requests.exceptions.ConnectionError:
@@ -45,6 +48,24 @@ def parse_args(parser: ArgumentParser):
         "--query",
         help="Query string for semantic search",
     )
+    if "-l" in sys.argv or "--limit" in sys.argv:
+        parser.add_argument(
+            "-l",
+            "--limit",
+            help="Limit the number of results",
+        )
+    parser.add_argument(
+        "-i",
+        "--index",
+        action="store_true",
+        help="(Re)index documents",
+    )
+    if "-i" in sys.argv or "--index" in sys.argv:
+        parser.add_argument(
+            "-f",
+            "--filepath",
+            help="Path to file to be indexed, if not passed, all documents will be (re)indexed",
+        )
     parser.add_argument(
         "-c",
         "--config",
@@ -56,15 +77,16 @@ def parse_args(parser: ArgumentParser):
 def main():
     parser = ArgumentParser(description="Semantic Search Program")
     args = parse_args(parser)
+    app = App()
     if args.daemon:
-        return server.run(host="0.0.0.0", port=80)
+        l.debug("starting daemon")
+        return server.run(host="0.0.0.0", port=30000)
+    if args.index:
+        l.debug(f"[CLI] indexing: {args.filepath}")
+        return app.index(args.filepath)
     if args.query:
-        if not is_server_running():
-            print("Server is not running. Starting the server...")
-            server.run(debug=True)
-        print(format_search_results(App().search(args.query, 20)))
-    else:
-        parser.print_help()
+        return print(format_search_results(app.search(args.query, 20)), end="")
+    parser.print_help()
 
 
 if __name__ == "__main__":

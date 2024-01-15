@@ -1,7 +1,8 @@
-import time
+import logging as l
+from http import HTTPStatus
 from os import getpid
 
-from flask import Flask, json, jsonify, request
+from flask import Flask, Response, json, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from cartographer.app import App, format_search_results
@@ -49,7 +50,6 @@ def info():
 
 @server.route("/index", methods=["GET"])
 def index():
-    start = time.time()
     filepath = request.args.get("filepath")
     app.index(filepath)
     return "Indexing Completed\n"
@@ -63,6 +63,42 @@ def perform_search():
     return jsonify(results)
 
 
+@server.route("/embed", methods=["POST", "GET"])
+def embed():
+    if request.method == "GET":
+        filepath = request.args.get("filepath")
+        if filepath is None:
+            return Response(
+                "The response body goes here", status=HTTPStatus.BAD_REQUEST
+            )
+        return jsonify(app.embedder.embed_file(filepath))
+    if request.method == "POST":
+        data = str(request.data)
+        l.debug(data)
+        return jsonify(app.embedder.embed_text(data).tolist())
+    return Response("Invalid HTTP METHOD", status=HTTPStatus.BAD_REQUEST)
+
+
 @server.route("/health", methods=["GET"])
 def healthcheck():
     return "I'm healthier"
+
+
+def has_no_empty_params(rule):
+    defaults = rule.defaults if rule.defaults is not None else ()
+    arguments = rule.arguments if rule.arguments is not None else ()
+    return len(defaults) >= len(arguments)
+
+
+@server.route("/site-map", methods=["GET"])
+def site_map():
+    links = []
+    for rule in server.url_map.iter_rules():
+        # Filter out rules we can't navigate to in a browser
+        # and rules that require parameters
+        if "GET" in rule.methods and has_no_empty_params(rule):
+            url = rule.rule
+            # url = url_for(rule.endpoint, **(rule.defaults or {}))
+            links.append((url, rule.endpoint))
+    # links is now a list of url, endpoint tuples
+    return links

@@ -1,3 +1,4 @@
+import logging as l
 import os
 import pickle
 from os.path import isdir
@@ -45,10 +46,12 @@ class App:
         return filenames
 
     def __process_files(self, directory: str):
+        l.debug("processing_files")
         embeddings: dict[str, list[float]] = {}
-        for file_path in self.__get_files(directory):
-            embedding = self.embedder.embed_file(file_path)
-            embeddings[file_path] = embedding
+        for filepath in self.__get_files(directory):
+            l.debug(f"filepath: {filepath}")
+            embedding = self.embedder.embed_file(filepath)
+            embeddings[filepath] = embedding
         return embeddings
 
     def __sort_search_results(self, scores: dict) -> dict:
@@ -60,14 +63,11 @@ class App:
         }
 
     def search(self, query: str, top_k: Optional[int]):
-        encoded_query = torch.from_numpy(
-            self.embedder.embed_text(query)
-        ).float()
+        query_enc = torch.from_numpy(self.embedder.embed_text(query)).float()
         scores: dict[str, float] = {}
         for filename, embedding in self.embeddings.items():
-            score = util.pytorch_cos_sim(
-                encoded_query, torch.from_numpy(array(embedding)).float()
-            )
+            emb = torch.from_numpy(array(embedding)).float()
+            score = util.pytorch_cos_sim(query_enc, emb)
             scores[filename] = score.item()
         sorted = self.__sort_search_results(scores)
         results = list(sorted.keys())
@@ -76,13 +76,15 @@ class App:
         return results
 
     def index(self, filepath: Optional[str]) -> None:
+        l.debug("indexing")
+        l.debug(f"filepath: {filepath}")
         if filepath:
             self.embeddings[filepath] = self.embedder.embed_file(filepath)
         else:
             for path in config.paths:
+                l.debug(f"path: {path}")
                 if isdir(path):
-                    new_embeddings = self.__process_files(path)
-                    self.embeddings.update(new_embeddings)
+                    self.embeddings.update(self.__process_files(path))
         self.embedder.write_embeddings(self.embeddings, config.embedding_file)
 
 

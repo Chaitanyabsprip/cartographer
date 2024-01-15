@@ -4,3 +4,4 @@ config.yml
 .ropeproject
 *pycache*
 .venv
+debug.log
