@@ -1,14 +1,14 @@
 from argparse import ArgumentParser
 
 import requests
-from app import make_search_request
+from app import App, format_search_results
 
-from daemon.server import app
+from daemon.server import server
 
 
 def is_server_running():
     try:
-        response = requests.get("http://127.0.0.1:5000/")
+        response = requests.get("http://127.0.0.1:80/")
         return response.ok
     except requests.exceptions.ConnectionError:
         return False
@@ -48,12 +48,12 @@ def main():
     parser = ArgumentParser(description="Semantic Search Program")
     args = parse_args(parser)
     if args.daemon:
-        return app.run(host="0.0.0.0", port=80)
+        return server.run(host="0.0.0.0", port=80)
     if args.query:
         if not is_server_running():
             print("Server is not running. Starting the server...")
-            app.run(debug=True)
-        print(make_search_request(args.query, 20))
+            server.run(debug=True)
+        print(format_search_results(App().search(args.query, 20)))
     else:
         parser.print_help()
 

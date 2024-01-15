@@ -1,95 +1,91 @@
 import os
 import pickle
 from os.path import isdir
+from typing import Optional
 
 import torch
-from embedding import Embedder, config
-from markdown import markdown
+from embedding import config
 from numpy import array
 from sentence_transformers import util
 from text_processor import TextProcessor
 
-emb = Embedder()
-tp = TextProcessor()
+from encoding.embedding import FileEmbedder
 
 
-def get_clean_text(file_path: str) -> str:
-    with open(file_path, "r", encoding="utf-8") as file:
-        markdown_content = file.read()
-        html_content = markdown(markdown_content)
-        cleaned_text = tp.clean(html_content)
-        return cleaned_text
+class App:
+    def __init__(self):
+        self.embedder = FileEmbedder(TextProcessor())
+        self.embeddings: dict[str, list] = {}
+        # initialise embeddings file
+        try:
+            with open(config.embedding_file, "rb") as file:
+                self.embeddings = pickle.load(file)
+        except FileNotFoundError:
+            open(config.embedding_file, "a").close()
+        except EOFError:
+            pass
 
+        pass
 
-def embed_file(file_path: str):
-    cleaned_text = get_clean_text(file_path)
-    embedding = emb.embed_text(cleaned_text)
-    return embedding
+    def __get_files(self, directory: str) -> list:
+        filenames = []
+        for root, dirs, files in os.walk(directory):
+            for pth in config.ignore_paths:
+                try:
+                    dirs.remove(pth)
+                except ValueError:
+                    pass
+            for filename in files:
+                if not (
+                    (os.path.splitext(filename)[1] in config.extensions)
+                    ^ config.blacklist_extensions
+                ):
+                    continue
+                file_path = os.path.abspath(os.path.join(root, filename))
+                filenames.append(file_path)
+        return filenames
 
+    def __process_files(self, directory: str):
+        embeddings: dict[str, list[float]] = {}
+        for file_path in self.__get_files(directory):
+            embedding = self.embedder.embed_file(file_path)
+            embeddings[file_path] = embedding
+        return embeddings
 
-def get_files(directory: str) -> list[str]:
-    filenames = []
-    for root, dirs, files in os.walk(directory):
-        for pth in config.ignore_paths:
-            try:
-                dirs.remove(pth)
-            except:
-                pass
-        for filename in files:
-            if not (
-                (os.path.splitext(filename)[1] in config.extensions)
-                ^ config.blacklist_extensions
-            ):
-                continue
-            file_path = os.path.abspath(os.path.join(root, filename))
-            filenames.append(file_path)
-    return filenames
+    def __sort_search_results(self, scores: dict) -> dict:
+        return {
+            k: v
+            for k, v in sorted(
+                scores.items(), key=lambda item: item[1], reverse=True
+            )
+        }
 
+    def search(self, query: str, top_k: Optional[int]):
+        encoded_query = torch.from_numpy(
+            self.embedder.embed_text(query)
+            # self.embedder.model.encode([query])[0]
+        ).float()
+        scores = {}
+        for filename, embedding in self.embeddings.items():
+            score = util.pytorch_cos_sim(
+                encoded_query, torch.from_numpy(array(embedding)).float()
+            )
+            scores[filename] = score.item()
+        sorted = self.__sort_search_results(scores)
+        results = list(sorted.keys())
+        if top_k:
+            return results[: int(top_k)]
+        return results
 
-def process_files(directory: str):
-    embeddings: dict[str, list[float]] = {}
-    for file_path in get_files(directory):
-        embedding = embed_file(file_path)
-        embeddings[file_path] = embedding
-    return embeddings
-
-
-def index_files(filepath: str = "") -> None:
-    if filepath:
-        emb.embeddings[filepath] = embed_file(filepath)
-    else:
-        for path in config.paths:
-            if isdir(path):
-                new_embeddings = process_files(path)
-                emb.embeddings.update(new_embeddings)
-    emb.write_embeddings(emb.embeddings, config.embedding_file)
-
-
-def search(query, embeddings_file, top_k=None):
-    if not emb.embeddings:
-        with open(embeddings_file, "rb") as file:
-            try:
-                emb.embeddings = pickle.load(file)
-            except:
-                pass
-
-    query_embedding = torch.from_numpy(emb.model.encode([query])[0]).float()
-    scores = {}
-    for filename, embedding in emb.embeddings.items():
-        score = util.pytorch_cos_sim(
-            query_embedding, torch.from_numpy(array(embedding)).float()
-        )
-        scores[filename] = score.item()
-    sorted_scores = {
-        k: v
-        for k, v in sorted(
-            scores.items(), key=lambda item: item[1], reverse=True
-        )
-    }
-    results = list(sorted_scores.keys())
-    if top_k:
-        results = list(sorted_scores.keys())[: int(top_k)]
-    return results
+    def index(self, filepath: Optional[str]) -> None:
+        if filepath:
+            self.embeddings[filepath] = self.embedder.embed_file(filepath)
+        else:
+            for path in config.paths:
+                if isdir(path):
+                    new_embeddings = self.__process_files(path)
+                    self.embeddings.update(new_embeddings)
+        self.embedder.write_embeddings(self.embeddings, config.embedding_file)
 
 
 def format_search_results(results):
@@ -104,8 +100,8 @@ def format_search_results(results):
     return formatted_results
 
 
-def make_search_request(query, limit):
-    embeddings_file = config.embedding_file
-    results = search(query, embeddings_file, top_k=limit)
-    formatted_results = format_search_results(results)
-    return formatted_results
+# def make_search_request(query, limit):
+#     embeddings_file = config.embedding_file
+#     results = search(query, embeddings_file, top_k=limit)
+#     formatted_results = format_search_results(results)
+#     return formatted_results

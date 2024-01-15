@@ -4,12 +4,13 @@ from os import getpid
 from flask import Flask, json, jsonify, request
 from werkzeug.exceptions import HTTPException
 
-from encoding.app import index_files, make_search_request
+from encoding.app import App
 
-app = Flask(__name__)
+server = Flask(__name__)
+app = App()
 
 
-@app.errorhandler(HTTPException)
+@server.errorhandler(HTTPException)
 def handle_exception(e):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error
@@ -26,7 +27,7 @@ def handle_exception(e):
     return response
 
 
-@app.route("/")
+@server.route("/")
 def hello():
     help_data = """
     Welcome to the Semantic Search Server!
@@ -41,28 +42,28 @@ def hello():
     return help_data
 
 
-@app.route("/info", methods=["GET"])
+@server.route("/info", methods=["GET"])
 def info():
     return jsonify({"pid": getpid()})
 
 
-@app.route("/index", methods=["GET"])
+@server.route("/index", methods=["GET"])
 def index():
     start = time.time()
     filepath = request.args.get("filepath")
-    index_files(filepath)
+    app.index(filepath)
     print((time.time() - start) * 10**3)
     return "Indexing Completed\n"
 
 
-@app.route("/search", methods=["GET"])
+@server.route("/search", methods=["GET"])
 def perform_search():
-    query = request.args.get("query")
-    limit = request.args.get("limit")
-    results = make_search_request(query, limit)
+    query = request.args.get("query", "", type=str)
+    limit = request.args.get("limit", type=int)
+    results = app.search(query, limit)
     return jsonify(results)
 
 
-@app.route("/health", methods=["GET"])
+@server.route("/health", methods=["GET"])
 def healthcheck():
     return "I'm healthier"
