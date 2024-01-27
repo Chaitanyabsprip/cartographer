@@ -4,7 +4,7 @@ from markdown import markdown
 from sentence_transformers import SentenceTransformer
 
 from cartographer.config import Config
-from encoding.text_processor import TextProcessor
+from embedding.text_processor import TextProcessor
 
 config = Config()
 

@@ -1,29 +1,31 @@
 import logging as l
+import os
 import sys
 from argparse import ArgumentParser
 
-import requests
 from app import App, format_search_results
 
-from daemon.server import server
+# from daemon.server import server
+import daemon.fserver as fserv
 
+home = os.environ.get("HOME", "")
 l.basicConfig(
     format="PY %(asctime)s %(levelname)s: %(message)s",
-    filename="/Users/chaitanyasharma/projects/cartographer/debug.log",
+    filename=f"{home}/.cache/cartographer/debug.log",
     encoding="utf-8",
     filemode="a",
     level=l.DEBUG,
 )
 
 
-def is_server_running():
-    try:
-        response = requests.get("http://127.0.0.1:30000/")
-        l.debug("server is running")
-        return response.ok
-    except requests.exceptions.ConnectionError:
-        l.debug("server is not running")
-        return False
+# def is_server_running():
+#     try:
+#         response = requests.get("http://127.0.0.1:30000/")
+#         l.debug("server is running")
+#         return response.ok
+#     except requests.exceptions.ConnectionError:
+#         l.debug("server is not running")
+#         return False
 
 
 def parse_args(parser: ArgumentParser):
@@ -80,7 +82,8 @@ def main():
     app = App()
     if args.daemon:
         l.debug("starting daemon")
-        return server.run(host="0.0.0.0", port=30000)
+        # return server.run(host="0.0.0.0", port=30000)
+        return fserv.main()
     if args.index:
         l.debug(f"[CLI] indexing: {args.filepath}")
         return app.index(args.filepath)

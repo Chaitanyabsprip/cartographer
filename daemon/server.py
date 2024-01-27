@@ -82,23 +82,3 @@ def embed():
 @server.route("/health", methods=["GET"])
 def healthcheck():
     return "I'm healthier"
-
-
-def has_no_empty_params(rule):
-    defaults = rule.defaults if rule.defaults is not None else ()
-    arguments = rule.arguments if rule.arguments is not None else ()
-    return len(defaults) >= len(arguments)
-
-
-@server.route("/site-map", methods=["GET"])
-def site_map():
-    links = []
-    for rule in server.url_map.iter_rules():
-        # Filter out rules we can't navigate to in a browser
-        # and rules that require parameters
-        if "GET" in rule.methods and has_no_empty_params(rule):
-            url = rule.rule
-            # url = url_for(rule.endpoint, **(rule.defaults or {}))
-            links.append((url, rule.endpoint))
-    # links is now a list of url, endpoint tuples
-    return links

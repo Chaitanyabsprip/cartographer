@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = ".;embedding";
+
+message ListOfFloats {
+    repeated double data = 1;
+}
+
+message FloatMap {
+  map<string, ListOfFloats> data = 1;
+}

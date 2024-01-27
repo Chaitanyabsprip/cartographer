@@ -8,8 +8,8 @@ import torch
 from numpy import array
 from sentence_transformers import util
 
-from encoding.embedding import FileEmbedder, config
-from encoding.text_processor import TextProcessor
+from embedding.embedding import FileEmbedder, config
+from embedding.text_processor import TextProcessor
 
 
 class App:
