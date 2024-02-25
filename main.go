@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/chaitanyabsprip/cartographer/cartographer"
+	app "github.com/chaitanyabsprip/cartographer/cartographer"
 	server "github.com/chaitanyabsprip/cartographer/daemon"
 )
 
@@ -58,7 +58,7 @@ func init() {
 
 	flag.BoolVar(&daemonFlag, "daemon", false, "Run the application as a daemon")
 	flag.BoolVar(&daemonFlag, "D", false, "Run the application as a daemon")
-	cartographer.Initialise()
+	app.Initialise()
 }
 
 func main() {
@@ -73,14 +73,14 @@ func main() {
 		if len(indexCmds.Args()) > 0 {
 			indexPath = indexCmds.Args()[0]
 		}
-		cartographer.Index(indexPath)
+		app.Index(indexPath)
 	case "query":
 		if len(os.Args) < 3 {
 			flag.Usage()
 		}
 		queryCmds.Parse(os.Args[2:])
 		query = queryCmds.Args()[0]
-		cartographer.Search(query, limit)
+		app.Search(query, limit)
 
 	default:
 		flag.Parse()
