@@ -5,8 +5,7 @@ import sys
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request
 
-from embedding.embedding import FileEmbedder
-from embedding.text_processor import TextProcessor
+from cartographer.app import FileEmbedder
 
 home = os.environ.get("HOME", "")
 l.basicConfig(
@@ -53,7 +52,7 @@ class Server:
 def main():
     model_name = sys.argv[1]
     l.debug(f"starting daemon with model {model_name}")
-    embedder = FileEmbedder(TextProcessor(), model_name)
+    embedder = FileEmbedder(model_name)
     uvicorn.run(Server(embedder).server, port=30000, host="0.0.0.0")
     l.debug("closing daemon")
 
