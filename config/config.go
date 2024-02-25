@@ -34,7 +34,7 @@ func readConfig() Configuration {
 	config := Configuration{
 		EmbeddingFile:       filepath.Join(cacheFilePath, "embeddings.pb"),
 		TransformerName:     "msmarco-distilbert-base-v4",
-		BlacklistExtensions: false,
+		BlacklistExtensions: true,
 		PythonInterpreter:   "python3",
 	}
 
@@ -53,6 +53,7 @@ func readConfig() Configuration {
 	if err := yaml.Unmarshal(file, &config); err != nil {
 		log.Println("Error unmarshalling YAML:", err)
 	}
+	config.BlacklistExtensions = len(config.Extensions) == 0
 
 	config.Paths = expandUser(config.Paths)
 	log.Println("Config loaded: ", config)
