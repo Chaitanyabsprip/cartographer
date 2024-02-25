@@ -5,4 +5,3 @@
 - [ ] Create cache folder and logfile
 - [ ] Create and initialise config file with defaults
 - [ ] Configurable hosting ports
-- [ ] Python venv management

@@ -19,6 +19,7 @@ type Configuration struct {
 	IgnorePaths         []string `yaml:"ignore_paths"`
 	Extensions          []string `yaml:"extensions"`
 	BlacklistExtensions bool     `yaml:"blacklist_extensions"`
+	PythonInterpreter   string   `yaml:"python_interpreter"`
 }
 
 var Config Configuration
@@ -38,19 +39,22 @@ func createAppDirs() {
 
 func readConfig() Configuration {
 	createAppDirs()
-
+	log.Println("created dirs")
 	configFilePath := filepath.Join(configdir.LocalConfig("cartographer"), "config.yml")
 	cacheFilePath := fmt.Sprint(os.Getenv("HOME"), "/.cache/cartographer")
 	config := Configuration{
 		EmbeddingFile:       filepath.Join(cacheFilePath, "embeddings.pb"),
 		TransformerName:     "msmarco-distilbert-base-v4",
 		BlacklistExtensions: false,
+		PythonInterpreter:   "/usr/bin/python3",
 	}
 
+	log.Println(configFilePath)
 	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
 		return config
 	}
 
+	log.Println("Config file exists, reading")
 	file, err := os.ReadFile(configFilePath)
 	if err != nil {
 		log.Println("Error reading config file:", err)
@@ -62,6 +66,7 @@ func readConfig() Configuration {
 	}
 
 	config.Paths = expandUser(config.Paths)
+	log.Println("Config loaded: ", config)
 
 	return config
 }

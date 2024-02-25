@@ -12,16 +12,19 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/chaitanyabsprip/cartographer/cartographer"
+	"github.com/chaitanyabsprip/cartographer/config"
 )
 
 func initialise(init chan bool) {
-	home := os.Getenv("HOME")
-	var (
-		app    = fmt.Sprint(home, "/projects/cartographer/cartographer/cli.py")
-		python = fmt.Sprint(home, "/projects/cartographer/.venv/bin/python")
-	)
+	config := config.Config
+	fmt.Println(os.Getwd())
 	log.Println("initialising python daemon")
-	exec.Command(python, app, "-D").Run()
+
+	cmd := exec.Command(config.PythonInterpreter, "cartographer/cli.py", "-D")
+	cmd.Stdout = log.Writer()
+	cmd.Stderr = log.Writer()
+	cmd.Start()
+
 	// implement a way to block until the server is actually ready
 	// maybe keep hitting /info endpoint in infinite loop with a timeout
 	log.Println("python daemon started")
@@ -40,6 +43,9 @@ func search(c echo.Context) error {
 	lim, err := strconv.Atoi(limit)
 	if err != nil {
 		lim = -1
+	}
+	if lim < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "limit must be a positive integer")
 	}
 	out, err := cartographer.Search(query, lim)
 	if err != nil {
