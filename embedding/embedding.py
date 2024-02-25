@@ -3,15 +3,12 @@ import pickle
 from markdown import markdown
 from sentence_transformers import SentenceTransformer
 
-from cartographer.config import Config
 from embedding.text_processor import TextProcessor
-
-config = Config()
 
 
 class Embedder:
-    def __init__(self):
-        self.model = SentenceTransformer(config.transformer_name)
+    def __init__(self, transformer_name: str):
+        self.model = SentenceTransformer(transformer_name)
 
     def embed_text(self, text: str):
         return self.model.encode([text])[0]
@@ -24,8 +21,8 @@ class Embedder:
 
 
 class FileEmbedder(Embedder):
-    def __init__(self, text_proc: TextProcessor):
-        super().__init__()
+    def __init__(self, text_proc: TextProcessor, transformer_name: str):
+        super().__init__(transformer_name)
         self.__text_proc: TextProcessor = text_proc
 
     def __get_sanitized_text(self, filepath: str):

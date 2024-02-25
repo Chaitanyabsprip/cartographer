@@ -19,7 +19,7 @@ func initialise(init chan bool) {
 	config := config.Config
 	log.Println("initialising python daemon")
 
-	cmd := exec.Command(config.PythonInterpreter, "cartographer/cli.py", "-D")
+	cmd := exec.Command(config.PythonInterpreter, "cartographer/server.py", config.TransformerName)
 	cmd.Stdout = log.Writer()
 	cmd.Stderr = log.Writer()
 	cmd.Start()

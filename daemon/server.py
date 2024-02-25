@@ -1,84 +1,62 @@
 import logging as l
-from http import HTTPStatus
-from os import getpid
+import os
+import sys
 
-from flask import Flask, Response, json, jsonify, request
-from werkzeug.exceptions import HTTPException
+import uvicorn
+from fastapi import FastAPI, HTTPException, Query, Request
 
-from cartographer.app import App, format_search_results
+from embedding.embedding import FileEmbedder
+from embedding.text_processor import TextProcessor
 
-server = Flask(__name__)
-app = App()
-
-
-@server.errorhandler(HTTPException)
-def handle_exception(e):
-    """Return JSON instead of HTML for HTTP errors."""
-    # start with the correct headers and status code from the error
-    response = e.get_response()
-    # replace the body with JSON
-    response.data = json.dumps(
-        {
-            "code": e.code,
-            "name": e.name,
-            "description": e.description,
-        }
-    )
-    response.content_type = "application/json"
-    return response
+home = os.environ.get("HOME", "")
+l.basicConfig(
+    format="PY %(asctime)s %(levelname)s: %(message)s",
+    filename=f"{home}/.local/cache/cartographer/debug.log",
+    encoding="utf-8",
+    filemode="a",
+    level=l.DEBUG,
+)
 
 
-@server.route("/")
-def hello():
-    help_data = """
-    Welcome to the Semantic Search Server!
+class Server:
+    server = FastAPI()
 
-    Available endpoints:
-    - /search?query=<your_query> - Perform a semantic search with the specified
-      query.
-    - /index - Index the markdown files and generate embeddings.
+    def __init__(self, embedder: FileEmbedder):
+        self.embedder = embedder
 
-    For more details, please refer to the API documentation.
-    """
-    return help_data
+    @server.middleware("http")
+    async def log_requests(self, request: Request, call_next):
+        req_body = await request.body()
+        l.info(f"{request.url} {req_body}")
+        return await call_next(request)
 
-
-@server.route("/info", methods=["GET"])
-def info():
-    return jsonify({"pid": getpid()})
-
-
-@server.route("/index", methods=["GET"])
-def index():
-    filepath = request.args.get("filepath")
-    app.index(filepath)
-    return "Indexing Completed\n"
-
-
-@server.route("/search", methods=["GET"])
-def perform_search():
-    query = request.args.get("query", "", type=str)
-    limit = request.args.get("limit", type=int)
-    results = format_search_results(app.search(query, limit))
-    return jsonify(results)
-
-
-@server.route("/embed", methods=["POST", "GET"])
-def embed():
-    if request.method == "GET":
-        filepath = request.args.get("filepath")
+    @server.get("/embed")
+    async def embed_get(self, filepath: str = Query(None)):
         if filepath is None:
-            return Response(
-                "The response body goes here", status=HTTPStatus.BAD_REQUEST
+            raise HTTPException(
+                status_code=400, detail="Missing filepath query parameter"
             )
-        return jsonify(app.embedder.embed_file(filepath))
-    if request.method == "POST":
-        data = str(request.data)
-        l.debug(data)
-        return jsonify(app.embedder.embed_text(data).tolist())
-    return Response("Invalid HTTP METHOD", status=HTTPStatus.BAD_REQUEST)
+        embedding = self.embedder.embed_file(filepath)
+        return {"embedding": embedding}
+
+    @server.post("/embed")
+    async def embed_post(self, request: Request):
+        data = await request.body()
+        embedding = self.embedder.embed_text(str(data))
+        return embedding.tolist()
+
+    @server.get("/health")
+    async def healthcheck():
+        return {"status": {"healthy": "wealthy"}}
 
 
-@server.route("/health", methods=["GET"])
-def healthcheck():
-    return "I'm healthier"
+def main():
+    model_name = sys.argv[1]
+    l.debug(f"starting daemon with model {model_name}")
+    embedder = FileEmbedder(TextProcessor(), model_name)
+    uvicorn.run(Server(embedder).server, port=30000, host="0.0.0.0")
+    l.debug("closing daemon")
+
+
+if __name__ == "__main__":
+    main()
