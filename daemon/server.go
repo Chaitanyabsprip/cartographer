@@ -17,7 +17,6 @@ import (
 
 func initialise(init chan bool) {
 	config := config.Config
-	fmt.Println(os.Getwd())
 	log.Println("initialising python daemon")
 
 	cmd := exec.Command(config.PythonInterpreter, "cartographer/cli.py", "-D")

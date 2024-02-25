@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/user"
@@ -28,20 +27,10 @@ func Initialise() {
 	Config = readConfig()
 }
 
-func createAppDirs() {
-	configDir := configdir.LocalConfig("cartographer")
-
-	err := configdir.MakePath(configDir)
-	if err != nil {
-		log.Println(err.Error())
-	}
-}
-
 func readConfig() Configuration {
-	createAppDirs()
 	log.Println("created dirs")
 	configFilePath := filepath.Join(configdir.LocalConfig("cartographer"), "config.yml")
-	cacheFilePath := fmt.Sprint(os.Getenv("HOME"), "/.cache/cartographer")
+	cacheFilePath := configdir.LocalCache("cartographer")
 	config := Configuration{
 		EmbeddingFile:       filepath.Join(cacheFilePath, "embeddings.pb"),
 		TransformerName:     "msmarco-distilbert-base-v4",

@@ -3,11 +3,26 @@ package utils
 import (
 	"log"
 	"os"
+
+	"github.com/kirsle/configdir"
 )
+
+func CreateAppDirs() {
+	configDir := configdir.LocalConfig("cartographer")
+	cacheDir := configdir.LocalCache("cartographer")
+	if err := configdir.MakePath(configDir); err != nil {
+		log.Println(err.Error())
+	}
+	if err := configdir.MakePath(cacheDir); err != nil {
+		log.Println(err.Error())
+	}
+}
 
 func CreateFile(filePath string) error {
 	_, err := os.Stat(filePath)
-	log.Println(err.Error())
+	if err != nil {
+		log.Println(err.Error())
+	}
 	if os.IsNotExist(err) {
 		log.Println("file ", filePath, " does not exist")
 		// File does not exist, create it
