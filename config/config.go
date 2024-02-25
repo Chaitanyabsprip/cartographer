@@ -35,7 +35,7 @@ func readConfig() Configuration {
 		EmbeddingFile:       filepath.Join(cacheFilePath, "embeddings.pb"),
 		TransformerName:     "msmarco-distilbert-base-v4",
 		BlacklistExtensions: false,
-		PythonInterpreter:   "/usr/bin/python3",
+		PythonInterpreter:   "python3",
 	}
 
 	log.Println(configFilePath)
