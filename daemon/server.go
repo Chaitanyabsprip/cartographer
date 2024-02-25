@@ -39,12 +39,15 @@ func index(c echo.Context) error {
 func search(c echo.Context) error {
 	query := c.QueryParam("query")
 	limit := c.QueryParam("limit")
-	lim, err := strconv.Atoi(limit)
-	if err != nil {
-		lim = -1
-	}
-	if lim < 1 {
-		return echo.NewHTTPError(http.StatusBadRequest, "limit must be a positive integer")
+	var lim int
+	if limit == "" {
+		lim = 10
+	} else {
+		var err error
+		lim, err = strconv.Atoi(limit)
+		if err != nil || lim < 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, "limit must be a positive integer")
+		}
 	}
 	out, err := cartographer.Search(query, lim)
 	if err != nil {
