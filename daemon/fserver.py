@@ -24,15 +24,13 @@ app = App()
 async def log_requests(request: Request, call_next):
     req_body = await request.body()
     l.info(f"{request.url} {req_body}")
-    return call_next(request)
+    return await call_next(request)
 
 
 @server.get("/embed")
 async def embed_get(filepath: str = Query(None)):
     if filepath is None:
-        raise HTTPException(
-            status_code=400, detail="Missing filepath query parameter"
-        )
+        raise HTTPException(status_code=400, detail="Missing filepath query parameter")
     embedding = app.embedder.embed_file(filepath)
     return {"embedding": embedding}
 

@@ -133,10 +133,7 @@ func Search(query string, limit int) ([]string, error) {
 		scores[file] = cosinesimilarity.Compute([][]float64{queryEnc}, [][]float64{embedding})[0][0]
 	}
 	results := sortSearchResults(scores)
-	if limit > 0 {
-		return results[:limit], nil
-	}
-	return results, nil
+	return results[:min(limit, len(results))], nil
 }
 
 func Index(filepath string) error {
@@ -144,6 +141,7 @@ func Index(filepath string) error {
 		embedding.EmbedFile(filepath)
 		return nil
 	}
+	log.Println(config.Config.Paths)
 	for _, path := range config.Config.Paths {
 		log.Println("path:", path)
 		if isDirectory(path) {

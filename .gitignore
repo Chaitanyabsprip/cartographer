@@ -5,3 +5,4 @@ config.yml
 *pycache*
 .venv
 debug.log
+.DS_Store
