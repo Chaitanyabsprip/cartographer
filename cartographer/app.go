@@ -61,14 +61,8 @@ func getFiles(directory string) ([]string, error) {
 		}
 
 		if !info.IsDir() {
-			filename := info.Name()
-
-			if shouldConsiderFile(filename) {
-				absPath, err := filepath.Abs(filepath.Join(root, filename))
-				if err != nil {
-					return err
-				}
-				filenames = append(filenames, absPath)
+			if shouldConsiderFile(root) {
+				filenames = append(filenames, root)
 			}
 		}
 		return nil
@@ -81,12 +75,20 @@ func getFiles(directory string) ([]string, error) {
 }
 
 func processFiles(directory string) map[string][]float64 {
-	log.Println("processing files")
+	log.Print("processing files in ", directory, "\n")
 	results := make(map[string][]float64)
 	files, _ := getFiles(directory)
 	for _, file := range files {
-		log.Println("filepath:", file)
-		e, _ := embedding.EmbedFile(file)
+		content, err := os.ReadFile(file)
+		if err != nil {
+			log.Print("Error reading file ", file, "\n", err.Error(), "\n")
+			continue
+		}
+		if len(content) == 0 {
+			log.Print("File ", file, "is empty\n")
+			continue
+		}
+		e, _ := embedding.EmbedText(string(content))
 		results[file] = e
 	}
 	return results

@@ -38,7 +38,8 @@ class Embedder:
         self.model = SentenceTransformer(transformer_name)
 
     def embed_text(self, text: str):
-        return self.model.encode([text])[0]
+        clean_text = clean(markdown(text))
+        return self.model.encode([clean_text])[0]
 
     def write_embeddings(
         self, embeddings: dict[str, list[float]], file_path: str
