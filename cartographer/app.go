@@ -11,33 +11,17 @@ import (
 
 	"github.com/chaitanyabsprip/cartographer/config"
 	"github.com/chaitanyabsprip/cartographer/embedding"
+	"github.com/chaitanyabsprip/cartographer/utils"
 )
 
 var embeddings map[string][]float64
-
-func createFile(filePath string) error {
-	_, err := os.Stat(filePath)
-	if err != nil {
-		return err
-	}
-	if os.IsNotExist(err) {
-		// File does not exist, create it
-		file, err := os.Create(filePath)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		return nil
-	}
-	return nil
-}
 
 func Initialise() {
 	config.Initialise()
 	embeddings = make(map[string][]float64)
 	_, err := os.Stat(config.Config.EmbeddingFile)
 	if errors.Is(err, os.ErrNotExist) {
-		createFile(config.Config.EmbeddingFile)
+		utils.CreateFile(config.Config.EmbeddingFile)
 	} else {
 		embeddings, err = embedding.Load(config.Config.EmbeddingFile)
 	}
