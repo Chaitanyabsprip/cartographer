@@ -7,6 +7,7 @@ import (
 
 func CreateFile(filePath string) error {
 	_, err := os.Stat(filePath)
+	log.Println(err.Error())
 	if os.IsNotExist(err) {
 		log.Println("file ", filePath, " does not exist")
 		// File does not exist, create it
@@ -25,7 +26,7 @@ func CreateDir(filePath string) error {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		// File does not exist, create it
-		error := os.Mkdir(filePath, 0o666)
+		error := os.Mkdir(filePath, 0o755)
 		if error != nil {
 			return err
 		}
