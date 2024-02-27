@@ -8,7 +8,7 @@ local utils = require 'semantic_search.utils'
 local config = {
     directory = '',
     embeddings_path = '',
-    host = 'http://127.0.0.1:80',
+    host = 'http://127.0.0.1:30001',
 }
 
 local function getpid()
@@ -20,9 +20,11 @@ local function getpid()
 end
 
 function M.setup(opts)
+    print 'ha'
     config = vim.tbl_deep_extend('force', config, opts) or config
-    local command = opts.python_path
-    local args = { opts.install_path .. 'encoding/cli.py', '-D' }
+    local command = 'cartographer'
+    -- TODO(chaitanya): remove trailing slash if added to install_path
+    local args = { '-D' }
     local job = utils.exec_async(command, args, nil, { ['PYTHONPATH'] = opts.install_path })
     config.job = job
     local group = vim.api.nvim_create_augroup('semantic_search', { clear = true })
