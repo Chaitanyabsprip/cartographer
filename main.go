@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
-
-	"github.com/kirsle/configdir"
 
 	app "github.com/chaitanyabsprip/cartographer/cartographer"
 	server "github.com/chaitanyabsprip/cartographer/daemon"
@@ -43,16 +40,7 @@ Examples:
 func init() {
 	utils.CreateAppDirs()
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	cacheDir := configdir.LocalCache("cartographer")
-	cacheFilepath := path.Join(cacheDir, "debug.log")
-	err := utils.CreateFile(cacheFilepath)
-	if err == nil {
-		log.Print("creating log file at", cacheFilepath, "\n")
-	}
-	file, err := os.OpenFile(cacheFilepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	file := utils.OpenLogFile("debug.log")
 	log.SetOutput(file)
 	if len(os.Args) < 2 {
 		fmt.Println("expected 'index' or 'query' subcommands")

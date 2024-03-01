@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"io"
 	"log"
 	"os"
+	"path"
 
 	"github.com/kirsle/configdir"
 )
@@ -49,4 +51,18 @@ func CreateDir(filePath string) error {
 	} else {
 		return err
 	}
+}
+
+func OpenLogFile(filename string) io.Writer {
+	cacheDir := configdir.LocalCache("cartographer")
+	cacheFilepath := path.Join(cacheDir, filename)
+	err := CreateFile(cacheFilepath)
+	if err == nil {
+		log.Print("creating", filename, "at", cacheFilepath, "\n")
+	}
+	file, err := os.OpenFile(cacheFilepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
+	if err != nil {
+		log.Print("could not open file", filename, "for logging:\n", err.Error())
+	}
+	return file
 }
