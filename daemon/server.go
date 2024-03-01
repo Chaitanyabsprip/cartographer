@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -22,7 +23,16 @@ func initialise(init chan bool) {
 	config := config.Config
 	log.Println("initialising python daemon")
 
-	cmd := exec.Command(config.PythonInterpreter, "daemon/server.py", config.TransformerName)
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	projectPath := filepath.Dir(filepath.Dir(exePath))
+	serverPath := fmt.Sprint(projectPath, "/daemon/server.py")
+	log.Println(serverPath)
+
+	cmd := exec.Command(config.PythonInterpreter, serverPath, config.TransformerName)
+	cmd.Env = append(cmd.Env, fmt.Sprint("HOME=", os.Getenv("HOME")), fmt.Sprint("PYTHONPATH=", projectPath))
 	cmd.Stdout = log.Writer()
 	cmd.Stderr = log.Writer()
 	cmd.Start()
