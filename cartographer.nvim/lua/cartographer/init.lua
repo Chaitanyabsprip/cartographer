@@ -3,7 +3,7 @@ local finders = require 'telescope.finders'
 local pickers = require 'telescope.pickers'
 local previewers = require 'telescope.previewers'
 local sorters = require 'telescope.sorters'
-local utils = require 'semantic_search.utils'
+local utils = require 'cartographer.utils'
 
 local config = {
     directory = '',
@@ -27,7 +27,7 @@ function M.setup(opts)
     local args = { '-D' }
     local job = utils.exec_async(command, args, nil, { ['PYTHONPATH'] = opts.install_path })
     config.job = job
-    local group = vim.api.nvim_create_augroup('semantic_search', { clear = true })
+    local group = vim.api.nvim_create_augroup('cartographer', { clear = true })
     vim.api.nvim_create_autocmd('VimLeavePre', {
         group = group,
         callback = function()

@@ -6,3 +6,4 @@ config.yml
 .venv
 debug.log
 .DS_Store
+bin
