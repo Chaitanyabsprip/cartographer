@@ -5,14 +5,11 @@ import (
 	"os"
 
 	"google.golang.org/protobuf/proto"
-
-	"github.com/chaitanyabsprip/cartographer/config"
 )
 
 const host string = "http://127.0.0.1:30000"
 
-func Save(floatMap map[string][]float64) error {
-	filePath := config.Config.EmbeddingFile
+func Save(filepath string, floatMap map[string][]float64) error {
 	data := &FloatMap{
 		Data: make(map[string]*ListOfFloats),
 	}
@@ -28,7 +25,7 @@ func Save(floatMap map[string][]float64) error {
 		return err
 	}
 
-	err = os.WriteFile(filePath, encodedData, 0o644)
+	err = os.WriteFile(filepath, encodedData, 0o644)
 	if err != nil {
 		return err
 	}

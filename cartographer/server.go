@@ -1,4 +1,4 @@
-package server
+package cartographer
 
 import (
 	"context"
@@ -12,13 +12,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/chaitanyabsprip/cartographer/cartographer"
 	"github.com/chaitanyabsprip/cartographer/utils"
 )
 
 func index(c echo.Context) error {
 	filepath := c.QueryParam("filepath")
-	cartographer.Index(filepath)
+	Index(filepath)
 	return c.String(http.StatusOK, fmt.Sprintf("Indexed file %v", filepath))
 }
 
@@ -35,7 +34,7 @@ func search(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "limit must be a positive integer")
 		}
 	}
-	out, err := cartographer.Search(query, lim)
+	out, err := Search(query, lim)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -54,7 +53,7 @@ func info(c echo.Context) error {
 	})
 }
 
-func Run() {
+func Serve() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())

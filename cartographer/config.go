@@ -1,4 +1,4 @@
-package config
+package cartographer
 
 import (
 	"log"
@@ -23,7 +23,7 @@ type Configuration struct {
 
 var Config Configuration
 
-func Initialise() {
+func initConfig() {
 	Config = readConfig()
 }
 

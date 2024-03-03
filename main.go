@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	app "github.com/chaitanyabsprip/cartographer/cartographer"
-	server "github.com/chaitanyabsprip/cartographer/daemon"
+	"github.com/chaitanyabsprip/cartographer/embedding"
 	"github.com/chaitanyabsprip/cartographer/utils"
 )
 
@@ -57,6 +57,7 @@ func init() {
 	flag.BoolVar(&daemonFlag, "daemon", false, "Run the application as a daemon")
 	flag.BoolVar(&daemonFlag, "D", false, "Run the application as a daemon")
 	app.Initialise()
+	embedding.Initialize(app.Config.TransformerName)
 }
 
 func main() {
@@ -85,6 +86,6 @@ func main() {
 	}
 
 	if daemonFlag {
-		server.Run()
+		app.Serve()
 	}
 }

@@ -2,6 +2,8 @@ package embedding
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"os"
 
 	p3 "github.com/sublime-security/cpy3"
@@ -9,8 +11,9 @@ import (
 
 var oModule *p3.PyObject
 
-func init() {
-	pyCodeGo := `
+func Initialize(transformerName string) {
+	log.Println(transformerName)
+	pyCodeGo := fmt.Sprintf(`
 from re import sub
 from string import punctuation
 
@@ -44,12 +47,12 @@ def clean(text: str = "") -> str:
     text = __remove_punctuation(text)
     return text.strip()
 
-model = SentenceTransformer(transformer_name)
+model = SentenceTransformer("%s")
 
 def embed_text(text: str) -> list[float]:
 	clean_text = clean(markdown(text))
 	return self.model.encode([clean_text])[0]
-`
+`, transformerName)
 
 	defer p3.Py_Finalize()
 	p3.Py_Initialize()

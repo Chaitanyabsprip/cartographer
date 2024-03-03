@@ -9,7 +9,6 @@ import (
 
 	"github.com/khaibin/go-cosinesimilarity"
 
-	"github.com/chaitanyabsprip/cartographer/config"
 	"github.com/chaitanyabsprip/cartographer/embedding"
 	"github.com/chaitanyabsprip/cartographer/utils"
 )
@@ -17,13 +16,13 @@ import (
 var embeddings map[string][]float64
 
 func Initialise() {
-	config.Initialise()
+	initConfig()
 	embeddings = make(map[string][]float64)
-	_, err := os.Stat(config.Config.EmbeddingFile)
+	_, err := os.Stat(Config.EmbeddingFile)
 	if errors.Is(err, os.ErrNotExist) {
-		utils.CreateFile(config.Config.EmbeddingFile)
+		utils.CreateFile(Config.EmbeddingFile)
 	} else {
-		embeddings, err = embedding.Load(config.Config.EmbeddingFile)
+		embeddings, err = embedding.Load(Config.EmbeddingFile)
 	}
 	if err != nil {
 		log.Println(err)
@@ -42,8 +41,8 @@ func contains(value string, array []string) bool {
 
 func shouldConsiderFile(filename string) bool {
 	ext := filepath.Ext(filename)
-	isInExtensions := contains(ext, config.Config.Extensions)
-	isBlacklistExtensions := config.Config.BlacklistExtensions
+	isInExtensions := contains(ext, Config.Extensions)
+	isBlacklistExtensions := Config.BlacklistExtensions
 	return (isInExtensions && !isBlacklistExtensions) ||
 		(!isInExtensions && isBlacklistExtensions)
 }
@@ -56,7 +55,7 @@ func getFiles(directory string) ([]string, error) {
 			return err
 		}
 
-		if contains(info.Name(), config.Config.IgnorePaths) {
+		if contains(info.Name(), Config.IgnorePaths) {
 			return filepath.SkipDir
 		}
 
@@ -127,14 +126,14 @@ func Index(filepath string) error {
 		embedding.EmbedFile(filepath)
 		return nil
 	}
-	log.Println(config.Config.Paths)
-	for _, path := range config.Config.Paths {
+	log.Println(Config.Paths)
+	for _, path := range Config.Paths {
 		log.Println("path:", path)
 		if isDirectory(path) {
 			embeddings = update(embeddings, processFiles(path))
 		}
 	}
-	err := embedding.Save(embeddings)
+	err := embedding.Save(Config.EmbeddingFile, embeddings)
 	if err != nil {
 		return err
 	}
