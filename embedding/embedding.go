@@ -1,11 +1,7 @@
 package embedding
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
 	"google.golang.org/protobuf/proto"
@@ -14,42 +10,6 @@ import (
 )
 
 const host string = "http://127.0.0.1:30000"
-
-func EmbedText(text string) ([]float64, error) {
-	response, err := http.Post(fmt.Sprintf("%s/embed", host), "plain/text", bytes.NewBuffer([]byte(text)))
-	if err != nil {
-		return nil, err
-	}
-	responseData, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var ret []float64
-	err = json.Unmarshal(responseData, &ret)
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func EmbedFile(filepath string) ([]float64, error) {
-	response, err := http.Get(fmt.Sprintf("%s/embed?filepath=%s", host, filepath))
-	if err != nil {
-		return nil, err
-	}
-	responseData, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var ret []float64
-	err = json.Unmarshal(responseData, &ret)
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
 
 func Save(floatMap map[string][]float64) error {
 	filePath := config.Config.EmbeddingFile
@@ -92,29 +52,3 @@ func Load(filePath string) (map[string][]float64, error) {
 	}
 	return result, nil
 }
-
-// func Search(query, limit string) (string, error) {
-// 	response, err := http.Get(fmt.Sprintf("%s/search?query=%s&limit=%s", host, query, limit))
-// 	if err != nil {
-// 		return "", err
-// 	}
-//
-// 	responseData, err := io.ReadAll(response.Body)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return (string(responseData)), nil
-// }
-//
-// func Index(filepath string) (string, error) {
-// 	response, err := http.Get(fmt.Sprintf("%s/index?filepath=%s", host, filepath))
-// 	if err != nil {
-// 		return "", err
-// 	}
-//
-// 	responseData, err := io.ReadAll(response.Body)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return (string(responseData)), nil
-// }
