@@ -7,41 +7,14 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/chaitanyabsprip/cartographer/cartographer"
-	"github.com/chaitanyabsprip/cartographer/config"
 	"github.com/chaitanyabsprip/cartographer/utils"
 )
-
-func initialise(init chan bool) {
-	config := config.Config
-	log.Println("initialising python daemon")
-
-	exePath, err := os.Executable()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	projectPath := filepath.Dir(filepath.Dir(exePath))
-	serverPath := fmt.Sprint(projectPath, "/daemon/server.py")
-	log.Println(serverPath)
-
-	cmd := exec.Command(config.PythonInterpreter, serverPath, config.TransformerName)
-	cmd.Env = append(cmd.Env, fmt.Sprint("HOME=", os.Getenv("HOME")), fmt.Sprint("PYTHONPATH=", projectPath))
-	cmd.Stdout = log.Writer()
-	cmd.Stderr = log.Writer()
-	cmd.Start()
-
-	// implement a way to block until the server is actually ready
-	// maybe keep hitting /info endpoint in infinite loop with a timeout
-	log.Println("python daemon started")
-	init <- true
-}
 
 func index(c echo.Context) error {
 	filepath := c.QueryParam("filepath")
@@ -82,10 +55,11 @@ func info(c echo.Context) error {
 }
 
 func Run() {
-	initialised := make(chan bool)
-	go initialise(initialised)
-	<-initialised
 	e := echo.New()
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Pre(middleware.RemoveTrailingSlash())
+
 	file := utils.OpenLogFile("daemon.log")
 	logger := slog.New(slog.NewJSONHandler(file, nil))
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -110,14 +84,10 @@ func Run() {
 		},
 	}))
 
-	log.Println("Server started")
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Pre(middleware.RemoveTrailingSlash())
-
 	e.GET("/index", index)
 	e.GET("/search", search)
 	e.GET("/health", health)
 	e.GET("/info", info)
+	log.Println("Server started")
 	e.Logger.Fatal(e.Start("0.0.0.0:30001"))
 }
