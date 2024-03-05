@@ -55,7 +55,7 @@ func init() {
 	}
 
 	flag.BoolVar(&daemonFlag, "daemon", false, "Run the application as a daemon")
-	flag.BoolVar(&daemonFlag, "D", false, "Run the application as a daemon")
+	flag.BoolVar(&daemonFlag, "d", false, "Run the application as a daemon")
 	app.Initialise()
 	embedding.Initialize(app.Config.TransformerName)
 }
