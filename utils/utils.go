@@ -57,8 +57,8 @@ func OpenLogFile(filename string) io.Writer {
 	cacheDir := configdir.LocalCache("cartographer")
 	cacheFilepath := path.Join(cacheDir, filename)
 	err := CreateFile(cacheFilepath)
-	if err == nil {
-		log.Print("creating", filename, "at", cacheFilepath, "\n")
+	if err != nil {
+		log.Print(err.Error())
 	}
 	file, err := os.OpenFile(cacheFilepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
 	if err != nil {
