@@ -2,6 +2,7 @@ package cartographer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
@@ -87,6 +88,11 @@ func Serve() {
 	e.GET("/search", search)
 	e.GET("/health", health)
 	e.GET("/info", info)
+	data, err := json.MarshalIndent(e.Routes(), "", "  ")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	fmt.Print(string(data))
 	log.Println("Server started")
 	e.Logger.Fatal(e.Start("0.0.0.0:30001"))
 }
