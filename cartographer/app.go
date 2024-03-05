@@ -122,13 +122,14 @@ func Search(query string, limit int) ([]string, error) {
 }
 
 func Index(filepath string) error {
+	log.Print("Indexing ")
 	if filepath != "" {
 		embedding.EmbedFile(filepath)
 		return nil
 	}
 	log.Println(Config.Paths)
 	for _, path := range Config.Paths {
-		log.Println("path:", path)
+		log.Println("path:", path, isDirectory(path))
 		if isDirectory(path) {
 			embeddings = update(embeddings, processFiles(path))
 		}
