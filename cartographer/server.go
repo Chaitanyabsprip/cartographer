@@ -18,7 +18,10 @@ import (
 
 func index(c echo.Context) error {
 	filepath := c.QueryParam("filepath")
-	Index(filepath)
+	err := Index(filepath)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 	return c.String(http.StatusOK, fmt.Sprintf("Indexed file %v", filepath))
 }
 
