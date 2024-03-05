@@ -1,4 +1,4 @@
-package cartographer
+package embedding
 
 import (
 	"log"
