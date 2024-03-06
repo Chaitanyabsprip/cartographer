@@ -40,6 +40,8 @@ func EmbedText(text string) ([]float64, error) {
 		p3.PyErr_Print()
 		return nil, errors.New("Failure in calling python function")
 	}
+	// decreffing the following causes segmentation fault, need to understand
+	// why. This can be a possible memory leak
 	// defer pText.DecRef()
 	// defer args.DecRef()
 	return goSliceFromPyList(result)

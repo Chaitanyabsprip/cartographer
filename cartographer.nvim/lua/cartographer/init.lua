@@ -1,3 +1,4 @@
+---@diagnostic disable: no-unknown
 local M = {}
 local finders = require 'telescope.finders'
 local pickers = require 'telescope.pickers'
@@ -20,12 +21,18 @@ local function getpid()
 end
 
 function M.setup(opts)
-    print 'ha'
     config = vim.tbl_deep_extend('force', config, opts) or config
-    local command = 'cartographer'
+    local command = opts.install_path .. '/bin/cartographer'
     -- TODO(chaitanya): remove trailing slash if added to install_path
-    local args = { '-D' }
-    local job = utils.exec_async(command, args, nil, { ['PYTHONPATH'] = opts.install_path })
+    local args = { '-d' }
+    local env = {
+        ['HOME'] = os.getenv 'HOME',
+        ['PATH'] = opts.python_path,
+        ['PYTHONPATH'] = opts.install_path,
+        ['XDG_CACHE_HOME'] = os.getenv 'XDG_CACHE_HOME',
+        ['XDG_CONFIG_HOME'] = os.getenv 'XDG_CONFIG_HOME',
+    }
+    local job = utils.exec_async(command, args, nil, env)
     config.job = job
     local group = vim.api.nvim_create_augroup('cartographer', { clear = true })
     vim.api.nvim_create_autocmd('VimLeavePre', {

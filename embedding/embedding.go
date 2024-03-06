@@ -7,8 +7,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const host string = "http://127.0.0.1:30000"
-
 func Save(filepath string, floatMap map[string][]float64) error {
 	data := &FloatMap{
 		Data: make(map[string]*ListOfFloats),
