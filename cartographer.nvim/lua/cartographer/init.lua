@@ -49,8 +49,8 @@ function M.setup(opts)
         pattern = '*.md',
         callback = function(event) M.index_files(event.match) end,
     })
-    vim.api.nvim_create_user_command('ObsidianIndexAllFiles', M.index_files, { nargs = 0 })
-    vim.api.nvim_create_user_command('ObsidianSemanticSearch', M.telescope_search, { nargs = 0 })
+    vim.api.nvim_create_user_command('CartographerIndex', M.index_files, { nargs = 0 })
+    vim.api.nvim_create_user_command('CartographerSearch', M.telescope_search, { nargs = 0 })
 end
 
 function M.index_files(filepath)
@@ -58,7 +58,7 @@ function M.index_files(filepath)
     local command = 'curl'
     local endpoint = filepath and '/index?filepath' .. filepath or '/index'
     local args = { config.host .. endpoint }
-    utils.exec_async(
+    utils.execute(
         command,
         args,
         vim.schedule_wrap(
@@ -88,9 +88,9 @@ function M.telescope_search()
                 entry_maker = function(entry)
                     return {
                         value = entry,
-                        display = entry.display_filename,
-                        path = entry.filename,
-                        ordinal = entry.filename,
+                        display = entry,
+                        path = entry,
+                        ordinal = entry,
                     }
                 end,
             },
