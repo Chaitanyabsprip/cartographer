@@ -70,7 +70,7 @@ end
 function M.search(query)
     query = vim.fn.substitute(query, [[\s\+]], '%20', 'g')
     local command = 'curl'
-    local args = { config.host .. '/search?query=' .. query }
+    local args = { config.host .. '/search?query=' .. query .. '&limit=30' }
     local job = utils.execute(command, args)
     local json = job:result()
     return vim.fn.json_decode(json)
