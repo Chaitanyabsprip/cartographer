@@ -88,9 +88,9 @@ function M.telescope_search()
                 entry_maker = function(entry)
                     return {
                         value = entry,
-                        display = entry,
-                        path = entry,
-                        ordinal = entry,
+                        display = entry.filepath,
+                        path = entry.filepath,
+                        ordinal = entry.score,
                     }
                 end,
             },

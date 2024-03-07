@@ -1,16 +1,15 @@
 package cartographer
 
 import (
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/khaibin/go-cosinesimilarity"
 
 	"github.com/chaitanyabsprip/cartographer/embedding"
-	"github.com/chaitanyabsprip/cartographer/utils"
 )
 
 var embeddings map[string][]float64
@@ -19,29 +18,23 @@ func Initialise() {
 	initConfig()
 	embeddings = make(map[string][]float64)
 	_, err := os.Stat(Config.EmbeddingFile)
-	if errors.Is(err, os.ErrNotExist) {
-		utils.CreateFile(Config.EmbeddingFile)
-	} else {
+	if err == nil {
 		embeddings, err = embedding.Load(Config.EmbeddingFile)
-	}
-	if err != nil {
-		log.Println(err)
-		Index("")
-	}
-}
-
-func contains(value string, array []string) bool {
-	for _, v := range array {
-		if value == v {
-			return true
+		if err == nil {
+			return
 		}
 	}
-	return false
+	f, err := os.Create(Config.EmbeddingFile)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer f.Close()
+	Index("")
 }
 
 func shouldConsiderFile(filename string) bool {
 	ext := filepath.Ext(filename)
-	isInExtensions := contains(ext, Config.Extensions)
+	isInExtensions := slices.Contains(Config.Extensions, ext)
 	isBlacklistExtensions := Config.BlacklistExtensions
 	return (isInExtensions && !isBlacklistExtensions) ||
 		(!isInExtensions && isBlacklistExtensions)
@@ -55,7 +48,7 @@ func getFiles(directory string) ([]string, error) {
 			return err
 		}
 
-		if contains(info.Name(), Config.IgnorePaths) {
+		if slices.Contains(Config.IgnorePaths, info.Name()) {
 			return filepath.SkipDir
 		}
 
@@ -93,22 +86,27 @@ func processFiles(directory string) map[string][]float64 {
 	return results
 }
 
-func sortSearchResults(results map[string]float64) []string {
-	keys := make([]string, len(results))
-	i := 0
-	for k := range results {
-		keys[i] = k
-		i++
-	}
-	sort.SliceStable(keys, func(i, j int) bool {
-		ival, iok := results[keys[i]]
-		jval, jok := results[keys[j]]
-		return iok && jok && ival < jval
-	})
-	return keys
+type SearchResult struct {
+	Score    float64 `json:"score"`
+	Filepath string  `json:"filepath"`
 }
 
-func Search(query string, limit int) ([]string, error) {
+func sortSearchResults(results map[string]float64) []SearchResult {
+	sorted := make([]SearchResult, len(results))
+	i := 0
+	for k := range results {
+		sorted[i] = SearchResult{Score: results[k], Filepath: k}
+		i++
+	}
+	sort.SliceStable(sorted, func(i, j int) bool {
+		ival, iok := results[sorted[i].Filepath]
+		jval, jok := results[sorted[j].Filepath]
+		return iok && jok && ival > jval
+	})
+	return sorted
+}
+
+func Search(query string, limit int) ([]SearchResult, error) {
 	queryEnc, err := embedding.EmbedText(query)
 	if err != nil {
 		return nil, err

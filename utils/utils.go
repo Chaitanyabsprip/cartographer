@@ -20,23 +20,18 @@ func CreateAppDirs() {
 	}
 }
 
+// Creates a file if it doesn't exist. Does nothing if the file does exist.
 func CreateFile(filePath string) error {
 	_, err := os.Stat(filePath)
-	if err != nil {
-		log.Println(err.Error())
-	}
 	if os.IsNotExist(err) {
-		log.Println("file ", filePath, " does not exist")
-		// File does not exist, create it
 		file, error := os.Create(filePath)
 		if error != nil {
 			return error
 		}
 		defer file.Close()
 		return nil
-	} else {
-		return err
 	}
+	return err
 }
 
 func CreateDir(filePath string) error {
