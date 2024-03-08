@@ -2,7 +2,6 @@ package cartographer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
@@ -57,6 +56,12 @@ func info(c echo.Context) error {
 	})
 }
 
+func printRoutes(routes []*echo.Route) {
+	for _, route := range routes {
+		fmt.Printf("%s %s\n", route.Method, route.Path)
+	}
+}
+
 func Serve() {
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -91,11 +96,7 @@ func Serve() {
 	e.GET("/search", search)
 	e.GET("/health", health)
 	e.GET("/info", info)
-	data, err := json.MarshalIndent(e.Routes(), "", "  ")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	fmt.Print(string(data))
+	printRoutes(e.Routes())
 	log.Println("Server started")
 	e.Logger.Fatal(e.Start("0.0.0.0:30001"))
 }
