@@ -9,22 +9,47 @@ local utils = require 'cartographer.utils'
 local config = {
     directory = '',
     embeddings_path = '',
-    host = 'http://127.0.0.1:30001',
+    host = 'http://127.0.0.1',
 }
-
-local function getpid()
-    local command = 'curl'
-    local args = { config.host .. '/info' }
-    local resp = utils.execute(command, args)
-    local json = vim.fn.json_decode(resp:result()[1])
-    return json and json.pid or nil
-end
 
 local function install_path()
     for _, path in ipairs(vim.api.nvim_list_runtime_paths()) do
         if path:match '/cartographer$' then return path end
     end
     return ''
+end
+
+local function get_cache_dir()
+    local osname = vim.loop.os_uname().sysname
+    local dir
+    if osname == 'Linux' then
+        dir = os.getenv 'XDG_CACHE_HOME'
+        dir = dir or os.getenv 'HOME' .. '/.cache'
+    elseif osname == 'Darwin' then
+        dir = os.getenv 'XDG_CACHE_HOME'
+        dir = dir or os.getenv 'HOME' .. '/Library/Caches'
+    elseif osname == 'Windows' then
+        dir = os.getenv 'LOCALAPPDATA'
+    end
+    return dir .. '/cartographer'
+end
+
+local function getport()
+    local file = io.open(get_cache_dir() .. '/.port', 'r')
+    if file == nil then return nil end
+    local port = file:read()
+    file:close()
+    return port
+end
+
+local function host() return config.host .. ':' .. getport() end
+
+local function getpid()
+    local command = 'curl'
+    local args = { host() .. '/info' }
+    local resp = utils.execute(command, args)
+    local json = vim.fn.json_decode(resp:result()[1])
+    return json and json.pid or nil
 end
 
 local function launch_app(opts)
@@ -68,7 +93,7 @@ function M.index_files(filepath)
     if type(filepath) ~= 'string' then filepath = nil end
     local command = 'curl'
     local endpoint = filepath and '/index?filepath' .. filepath or '/index'
-    local args = { config.host .. endpoint }
+    local args = { host() .. endpoint }
     utils.execute(
         command,
         args,
@@ -81,7 +106,7 @@ end
 function M.search(query)
     query = vim.fn.substitute(query, [[\s\+]], '%20', 'g')
     local command = 'curl'
-    local args = { config.host .. '/search?query=' .. query .. '&limit=30' }
+    local args = { host() .. '/search?query=' .. query .. '&limit=30' }
     local job = utils.execute(command, args)
     local json = job:result()
     return vim.fn.json_decode(json)
