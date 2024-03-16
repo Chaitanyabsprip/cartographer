@@ -5,6 +5,7 @@ local pickers = require 'telescope.pickers'
 local previewers = require 'telescope.previewers'
 local sorters = require 'telescope.sorters'
 local utils = require 'cartographer.utils'
+local curl = require 'plenary.curl'
 
 local config = {
     directory = '',
@@ -35,20 +36,20 @@ local function get_cache_dir()
 end
 
 local function getport()
+    if config.port ~= nil then return config.port end
     local file = io.open(get_cache_dir() .. '/.port', 'r')
     if file == nil then return nil end
     local port = file:read()
     file:close()
+    config.port = port
     return port
 end
 
-local function host() return config.host .. ':' .. getport() end
+local function uri(endpoint) return config.host .. ':' .. getport() .. endpoint end
 
 local function getpid()
-    local command = 'curl'
-    local args = { host() .. '/info' }
-    local resp = utils.execute(command, args)
-    local json = vim.fn.json_decode(resp:result()[1])
+    local resp = curl.get(uri '/info')
+    local json = vim.fn.json_decode(resp.body)
     return json and json.pid or nil
 end
 
@@ -91,25 +92,14 @@ end
 
 function M.index_files(filepath)
     if type(filepath) ~= 'string' then filepath = nil end
-    local command = 'curl'
     local endpoint = filepath and '/index?filepath' .. filepath or '/index'
-    local args = { host() .. endpoint }
-    utils.execute(
-        command,
-        args,
-        vim.schedule_wrap(
-            function() vim.notify('Indexing files completed', vim.log.levels.INFO) end
-        )
-    )
+    curl.get(uri(endpoint))
 end
 
 function M.search(query)
     query = vim.fn.substitute(query, [[\s\+]], '%20', 'g')
-    local command = 'curl'
-    local args = { host() .. '/search?query=' .. query .. '&limit=30' }
-    local job = utils.execute(command, args)
-    local json = job:result()
-    return vim.fn.json_decode(json)
+    local resp = curl.get(uri('/search?query=' .. query .. '&limit=30'))
+    return vim.fn.json_decode(resp.body)
 end
 
 function M.telescope_search()
