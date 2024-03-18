@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	python3 "github.com/sublime-security/cpy3"
+
 	app "github.com/chaitanyabsprip/cartographer/cartographer"
 	"github.com/chaitanyabsprip/cartographer/embedding"
 	"github.com/chaitanyabsprip/cartographer/utils"
@@ -61,6 +63,7 @@ func initialise() {
 }
 
 func main() {
+	defer python3.Py_Finalize()
 	initialise()
 	indexCmds := flag.NewFlagSet("index", flag.ExitOnError)
 	queryCmds := flag.NewFlagSet("query", flag.ExitOnError)
