@@ -37,7 +37,7 @@ Examples:
   %[1]s query -l 10 "What does this do?"
 `
 
-func init() {
+func initialise() {
 	utils.CreateAppDirs()
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	file := utils.OpenLogFile("debug.log")
@@ -61,6 +61,7 @@ func init() {
 }
 
 func main() {
+	initialise()
 	indexCmds := flag.NewFlagSet("index", flag.ExitOnError)
 	queryCmds := flag.NewFlagSet("query", flag.ExitOnError)
 	queryCmds.IntVar(&limit, "limit", 9999, "Limit the number of results")
