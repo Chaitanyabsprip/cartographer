@@ -19,6 +19,7 @@ import (
 	"github.com/chaitanyabsprip/cartographer/utils"
 )
 
+// Serve function  
 func Serve() {
 	e := echo.New()
 	setupLoggingMiddleware(e)
@@ -31,7 +32,10 @@ func Serve() {
 	e.GET("/health", health)
 	e.GET("/info", info)
 
-	listener, err := net.Listen("tcp", "127.0.0.1:0") // 0 tells the system to select an available port
+	listener, err := net.Listen(
+		"tcp",
+		"127.0.0.1:0",
+	) // 0 tells the system to select an available port
 	if err != nil {
 		log.Fatal("Error starting server: ", err.Error())
 	}

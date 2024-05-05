@@ -1,3 +1,4 @@
+// Package utils provides utils  
 package utils
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/kirsle/configdir"
 )
 
+// CreateAppDirs function  
 func CreateAppDirs() {
 	configDir := configdir.LocalConfig("cartographer")
 	cacheDir := configdir.LocalCache("cartographer")
@@ -20,13 +22,14 @@ func CreateAppDirs() {
 	}
 }
 
-// Creates a file if it doesn't exist. Does nothing if the file does exist.
+// CreateFile function creates a file if it doesn't exist. Does nothing if the file does exist.
 func CreateFile(filePath string) error {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		file, error := os.Create(filePath)
-		if error != nil {
-			return error
+		var file *os.File
+		file, err = os.Create(filePath)
+		if err != nil {
+			return err
 		}
 		defer file.Close()
 		return nil
@@ -34,20 +37,21 @@ func CreateFile(filePath string) error {
 	return err
 }
 
+// CreateDir function  
 func CreateDir(filePath string) error {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		// File does not exist, create it
-		error := os.Mkdir(filePath, 0o755)
-		if error != nil {
+		err = os.Mkdir(filePath, 0o755)
+		if err != nil {
 			return err
 		}
 		return nil
-	} else {
-		return err
 	}
+	return err
 }
 
+// OpenLogFile function  
 func OpenLogFile(filename string) io.Writer {
 	cacheDir := configdir.LocalCache("cartographer")
 	cacheFilepath := path.Join(cacheDir, filename)

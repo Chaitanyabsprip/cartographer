@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Save function  
 func Save(filepath string, floatMap map[string][]float64) error {
 	data := &FloatMap{
 		Data: make(map[string]*ListOfFloats),
@@ -31,6 +32,7 @@ func Save(filepath string, floatMap map[string][]float64) error {
 	return nil
 }
 
+// Load function  
 func Load(filePath string) (map[string][]float64, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {

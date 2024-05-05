@@ -11,6 +11,7 @@ import (
 
 var oModule *p3.PyObject
 
+// Initialize function  
 func Initialize(transformerName string) {
 	log.Println(transformerName)
 	pyCodeGo := fmt.Sprintf(`
@@ -27,6 +28,7 @@ def embed_text(text: str) -> list[float]:
 	oModule = p3.PyImport_AddModule("__main__")
 }
 
+// EmbedText function  
 func EmbedText(text string) ([]float64, error) {
 	pText := p3.PyUnicode_FromString(Clean(text))
 	args := p3.PyTuple_New(1)
@@ -47,6 +49,7 @@ func EmbedText(text string) ([]float64, error) {
 	return goSliceFromPyList(result)
 }
 
+// EmbedFile function  
 func EmbedFile(filepath string) ([]float64, error) {
 	content, err := os.ReadFile(filepath)
 	if err != nil {

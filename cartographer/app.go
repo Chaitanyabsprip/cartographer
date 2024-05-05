@@ -1,3 +1,4 @@
+// Package cartographer provides cartographer  
 package cartographer
 
 import (
@@ -14,6 +15,7 @@ import (
 
 var embeddings map[string][]float64
 
+// Initialise function  
 func Initialise() {
 	initConfig()
 	embeddings = make(map[string][]float64)
@@ -86,6 +88,7 @@ func processFiles(directory string) map[string][]float64 {
 	return results
 }
 
+// SearchResult struct  
 type SearchResult struct {
 	Score    float64 `json:"score"`
 	Filepath string  `json:"filepath"`
@@ -106,6 +109,7 @@ func sortSearchResults(results map[string]float64) []SearchResult {
 	return sorted
 }
 
+// Search function  
 func Search(query string, limit int) ([]SearchResult, error) {
 	queryEnc, err := embedding.EmbedText(query)
 	if err != nil {
@@ -119,6 +123,7 @@ func Search(query string, limit int) ([]SearchResult, error) {
 	return results[:min(limit, len(results))], nil
 }
 
+// Index function  
 func Index(filepath string) error {
 	log.Print("Indexing ")
 	if filepath != "" {
@@ -154,6 +159,7 @@ func isDirectory(path string) bool {
 	return fileInfo.IsDir()
 }
 
+// FormatSearchResults function  
 func FormatSearchResults(results []string) []map[string]string {
 	mapped := make([]map[string]string, len(results))
 	for i, e := range results {

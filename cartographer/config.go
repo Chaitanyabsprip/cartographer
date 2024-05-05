@@ -21,6 +21,7 @@ type Configuration struct {
 	PythonInterpreter   string   `yaml:"python_interpreter"`
 }
 
+// Config  
 var Config Configuration
 
 func initConfig() {
